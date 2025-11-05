@@ -1,0 +1,47 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Función helper para verificar autenticación
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Función para verificar si el usuario es el propietario
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    // Reglas para la colección de clientes
+    match /clients/{clientId} {
+      // Solo usuarios autenticados pueden leer
+      allow read: if isSignedIn();
+      
+      // Solo usuarios autenticados pueden crear
+      allow create: if isSignedIn();
+      
+      // Solo usuarios autenticados pueden actualizar y eliminar
+      allow update, delete: if isSignedIn();
+    }
+    
+    // Reglas para la colección de pagos
+    match /payments/{paymentId} {
+      // Solo usuarios autenticados pueden leer
+      allow read: if isSignedIn();
+      
+      // Solo usuarios autenticados pueden crear
+      // Y el createdBy debe coincidir con el uid del usuario
+      allow create: if isSignedIn() && 
+                      request.resource.data.createdBy == request.auth.uid;
+      
+      // Solo usuarios autenticados pueden actualizar y eliminar
+      allow update, delete: if isSignedIn();
+    }
+    
+    // Bloquear acceso a cualquier otra colección
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

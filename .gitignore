@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+.env
+.env.local
+.env.production
+.env.development
+
+# Build output
+build/
+dist/
+coverage/
+*.log
+
+# System
+.DS_Store
+.vscode/
+.idea/
