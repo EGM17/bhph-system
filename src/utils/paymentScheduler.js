@@ -5,26 +5,46 @@ export const generateScheduledPayments = (client) => {
   const scheduledPayments = [];
   const startDate = client.paymentStartDate;
   
-  // Generar pagos mensuales
-  for (let i = 0; i < client.numberOfPayments; i++) {
-    // 🔧 FIX: Usar addMonths que maneja zona horaria correctamente
-    const dueDate = addMonths(startDate, i);
-    
-    scheduledPayments.push({
-      id: `monthly_${i + 1}`,
-      paymentNumber: i + 1,
-      type: 'monthly',
-      concept: `Pago Mensual #${i + 1}`,
-      amount: client.monthlyPayment,
-      dueDate: dueDate,  // Ya está en formato correcto
-      status: 'pending',
-      paidAmount: 0,
-      remainingAmount: client.monthlyPayment,
-      payments: []
+  // 🆕 NUEVA LÓGICA: Detectar si usa schedule personalizado
+  if (client.useCustomSchedule && client.customPaymentSchedule && Array.isArray(client.customPaymentSchedule)) {
+    // Usar pagos personalizados
+    client.customPaymentSchedule.forEach((customPay, index) => {
+      const dueDate = addMonths(startDate, index);
+      
+      scheduledPayments.push({
+        id: `monthly_${customPay.paymentNumber}`,
+        paymentNumber: customPay.paymentNumber,
+        type: 'monthly',
+        concept: `Pago Mensual #${customPay.paymentNumber}`,
+        amount: customPay.amount,
+        dueDate: dueDate,
+        status: 'pending',
+        paidAmount: 0,
+        remainingAmount: customPay.amount,
+        payments: []
+      });
     });
+  } else {
+    // Usar pagos estándar (lógica original)
+    for (let i = 0; i < client.numberOfPayments; i++) {
+      const dueDate = addMonths(startDate, i);
+      
+      scheduledPayments.push({
+        id: `monthly_${i + 1}`,
+        paymentNumber: i + 1,
+        type: 'monthly',
+        concept: `Pago Mensual #${i + 1}`,
+        amount: client.monthlyPayment,
+        dueDate: dueDate,
+        status: 'pending',
+        paidAmount: 0,
+        remainingAmount: client.monthlyPayment,
+        payments: []
+      });
+    }
   }
   
-  // Enganche - Usar EXACTAMENTE la misma lógica que placas
+  // Enganche
   if (client.downPayment && client.downPayment > 0) {
     const totalAmount = client.downPayment;
     const paidAmount = client.downPaymentPaid || 0;
@@ -75,14 +95,12 @@ export const calculatePaymentStatus = (scheduledPayment) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
-  // 🔧 FIX: Crear fecha local correctamente
   const [year, month, day] = scheduledPayment.dueDate.split('-').map(Number);
   const dueDate = new Date(year, month - 1, day);
   dueDate.setHours(0, 0, 0, 0);
   
   const daysDiff = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
   
-  // Verificar si está pagado completamente
   if (scheduledPayment.remainingAmount <= 0) {
     return 'paid';
   } else if (scheduledPayment.paidAmount > 0) {

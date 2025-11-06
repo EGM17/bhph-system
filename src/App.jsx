@@ -82,13 +82,19 @@ function AppContent() {
     try {
       if (editingClient) {
         // 🔧 FIX: Al editar, regenerar scheduledPayments si cambiaron valores importantes
+        // O si cambió el modo de pagos (estándar <-> personalizado)
         const shouldRegenerateSchedule = 
           editingClient.downPayment !== clientData.downPayment ||
           editingClient.downPaymentPaid !== clientData.downPaymentPaid ||
           editingClient.platesAmount !== clientData.platesAmount ||
           editingClient.platesPaid !== clientData.platesPaid ||
           editingClient.monthlyPayment !== clientData.monthlyPayment ||
-          editingClient.numberOfPayments !== clientData.numberOfPayments;
+          editingClient.numberOfPayments !== clientData.numberOfPayments ||
+          // 🆕 NUEVA CONDICIÓN: Detectar cambio en modo de pagos
+          editingClient.useCustomSchedule !== clientData.useCustomSchedule ||
+          // 🆕 O si cambió el schedule personalizado
+          (clientData.useCustomSchedule && 
+           JSON.stringify(editingClient.customPaymentSchedule) !== JSON.stringify(clientData.customPaymentSchedule));
 
         const updateData = {
           ...clientData,
@@ -97,7 +103,29 @@ function AppContent() {
 
         if (shouldRegenerateSchedule) {
           // Regenerar los pagos programados con los nuevos valores
-          updateData.scheduledPayments = generateScheduledPayments(clientData);
+          const newScheduledPayments = generateScheduledPayments(clientData);
+          
+          // 🔧 IMPORTANTE: Preservar pagos ya aplicados
+          // Si el cliente ya tenía scheduledPayments, intentar preservar los pagos aplicados
+          if (editingClient.scheduledPayments && Array.isArray(editingClient.scheduledPayments)) {
+            newScheduledPayments.forEach(newPayment => {
+              // Buscar si este pago ya existía
+              const oldPayment = editingClient.scheduledPayments.find(
+                old => old.id === newPayment.id || 
+                      (old.type === newPayment.type && old.paymentNumber === newPayment.paymentNumber)
+              );
+              
+              if (oldPayment && oldPayment.paidAmount > 0) {
+                // Preservar el monto pagado
+                newPayment.paidAmount = oldPayment.paidAmount;
+                newPayment.remainingAmount = newPayment.amount - oldPayment.paidAmount;
+                newPayment.payments = oldPayment.payments || [];
+                newPayment.status = calculatePaymentStatus(newPayment);
+              }
+            });
+          }
+          
+          updateData.scheduledPayments = newScheduledPayments;
         }
 
         await updateDoc(doc(db, 'clients', editingClient.id), updateData);

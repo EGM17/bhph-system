@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ToggleLeft, ToggleRight } from 'lucide-react';
 import { getTodayString } from '../utils/dateHelpers';
+import CustomPaymentScheduleEditor from './CustomPaymentScheduleEditor';
 
 export default function ClientFormPage({ client, onSave, onCancel }) {
   const [formData, setFormData] = useState(client || {
@@ -11,7 +12,7 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
     vehicleYear: new Date().getFullYear(),
     vehicleMake: '',
     vehicleModel: '',
-    purchaseDate: getTodayString(),  // 🔧 FIX: Usar función helper
+    purchaseDate: getTodayString(),
     downPayment: 0,
     downPaymentPaid: 0,
     downPaymentDueDate: '',
@@ -21,13 +22,25 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
     totalBalance: 0,
     monthlyPayment: 0,
     numberOfPayments: 24,
-    paymentStartDate: getTodayString(),  // 🔧 FIX: Usar función helper
+    paymentStartDate: getTodayString(),
     status: 'active',
-    notes: ''
+    notes: '',
+    // 🆕 Nuevos campos
+    useCustomSchedule: client?.useCustomSchedule || false,
+    customPaymentSchedule: client?.customPaymentSchedule || null
   });
+
+  const [customScheduleValid, setCustomScheduleValid] = useState(true);
+  const [customScheduleData, setCustomScheduleData] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validar si usa schedule personalizado
+    if (formData.useCustomSchedule && !customScheduleValid) {
+      alert('Por favor ajusta los montos del calendario personalizado para que sumen el balance total.');
+      return;
+    }
     
     // Calcular pendientes
     const downPaymentPending = formData.downPayment - (formData.downPaymentPaid || 0);
@@ -38,7 +51,9 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
       downPaymentPending,
       platesPending,
       remainingBalance: client ? formData.remainingBalance : formData.totalBalance,
-      lastPaymentDate: formData.paymentStartDate
+      lastPaymentDate: formData.paymentStartDate,
+      // 🆕 Guardar schedule personalizado si está activo
+      customPaymentSchedule: formData.useCustomSchedule ? customScheduleData : null
     });
   };
 
@@ -48,6 +63,18 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
       ...prev,
       [name]: type === 'number' ? parseFloat(value) || 0 : value
     }));
+  };
+
+  const handleToggleCustomSchedule = () => {
+    setFormData(prev => ({
+      ...prev,
+      useCustomSchedule: !prev.useCustomSchedule
+    }));
+  };
+
+  const handleCustomScheduleChange = (schedule, isValid) => {
+    setCustomScheduleData(schedule);
+    setCustomScheduleValid(isValid);
   };
 
   return (
@@ -233,36 +260,40 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Pago Mensual *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    name="monthlyPayment"
-                    value={formData.monthlyPayment}
-                    onChange={handleChange}
-                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-              </div>
+              {!formData.useCustomSchedule && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Pago Mensual *
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                      <input
+                        type="number"
+                        name="monthlyPayment"
+                        value={formData.monthlyPayment}
+                        onChange={handleChange}
+                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        required={!formData.useCustomSchedule}
+                      />
+                    </div>
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Número de Pagos *
-                </label>
-                <input
-                  type="number"
-                  name="numberOfPayments"
-                  value={formData.numberOfPayments}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Número de Pagos *
+                    </label>
+                    <input
+                      type="number"
+                      name="numberOfPayments"
+                      value={formData.numberOfPayments}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required={!formData.useCustomSchedule}
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -278,6 +309,79 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
                 />
               </div>
             </div>
+          </div>
+
+          {/* 🆕 SECCIÓN DE PAGOS PERSONALIZADOS */}
+          <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow p-6 border-2 border-purple-200">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-purple-900 flex items-center gap-2">
+                  📅 Calendario de Pagos
+                </h2>
+                <p className="text-sm text-purple-700 mt-1">
+                  {formData.useCustomSchedule 
+                    ? 'Define el monto de cada mensualidad individualmente' 
+                    : 'Usa pagos mensuales iguales'}
+                </p>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleToggleCustomSchedule}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition shadow-md ${
+                  formData.useCustomSchedule
+                    ? 'bg-purple-600 text-white hover:bg-purple-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300'
+                }`}
+              >
+                {formData.useCustomSchedule ? (
+                  <>
+                    <ToggleRight className="w-5 h-5" />
+                    Pagos Personalizados
+                  </>
+                ) : (
+                  <>
+                    <ToggleLeft className="w-5 h-5" />
+                    Pagos Estándar
+                  </>
+                )}
+              </button>
+            </div>
+
+            {formData.useCustomSchedule ? (
+              <div className="bg-white rounded-lg p-4">
+                <div className="mb-4 bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                  <p className="text-sm text-blue-800">
+                    💡 <strong>Tip:</strong> Puedes tener diferentes montos por mes. Por ejemplo: 11 meses de $400 y 1 mes de $200.
+                    Usa el botón "Distribuir Equitativamente" para empezar y luego ajusta los montos.
+                  </p>
+                </div>
+                
+                <CustomPaymentScheduleEditor
+                  numberOfPayments={formData.numberOfPayments}
+                  monthlyPayment={formData.monthlyPayment}
+                  totalBalance={formData.totalBalance}
+                  initialCustomSchedule={formData.customPaymentSchedule}
+                  onChange={handleCustomScheduleChange}
+                />
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg p-6 text-center">
+                <p className="text-gray-600 mb-2">
+                  Actualmente usando pagos mensuales estándar
+                </p>
+                <div className="inline-flex items-center gap-4 text-lg font-semibold text-gray-800">
+                  <span>{formData.numberOfPayments} pagos</span>
+                  <span>×</span>
+                  <span>${formData.monthlyPayment.toLocaleString()}</span>
+                  <span>=</span>
+                  <span className="text-green-600">${(formData.numberOfPayments * formData.monthlyPayment).toLocaleString()}</span>
+                </div>
+                <p className="text-sm text-gray-500 mt-2">
+                  Activa "Pagos Personalizados" si necesitas montos diferentes por mes
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Enganche */}
