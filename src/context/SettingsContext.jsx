@@ -27,26 +27,26 @@ export const SettingsProvider = ({ children }) => {
   };
 
   /**
-   * Formatea una fecha para mostrarla al usuario
-   * Maneja tanto fechas en formato local como UTC
+   * 🔧 FIXED: Formatea una fecha para mostrarla al usuario SIN perder días por UTC
+   * Maneja fechas en formato YYYY-MM-DD correctamente
    */
   const formatDate = (dateString, options = {}) => {
     if (!dateString) return 'N/A';
     
     try {
-      // 🔧 FIX: Convertir fecha UTC a fecha local
-      // Si viene como "2025-12-03" desde Firebase, crear fecha local correctamente
       let date;
       
+      // 🔧 FIX CRÍTICO: Si viene como string YYYY-MM-DD, crear fecha LOCAL
       if (typeof dateString === 'string' && dateString.includes('-')) {
-        // Es un string en formato YYYY-MM-DD
         const [year, month, day] = dateString.split('-').map(Number);
+        // Crear fecha en zona horaria LOCAL (no UTC)
         date = new Date(year, month - 1, day);
       } else {
+        // Para otros formatos (timestamps, Date objects)
         date = new Date(dateString);
       }
       
-      // Si la fecha es inválida
+      // Validar que la fecha sea válida
       if (isNaN(date.getTime())) {
         return 'Fecha inválida';
       }
@@ -63,7 +63,7 @@ export const SettingsProvider = ({ children }) => {
   };
 
   /**
-   * Convierte una fecha a formato para input date (YYYY-MM-DD)
+   * 🔧 FIXED: Convierte una fecha a formato para input date (YYYY-MM-DD)
    * Asegura que la fecha sea local, no UTC
    */
   const toInputDate = (dateString) => {
@@ -72,6 +72,12 @@ export const SettingsProvider = ({ children }) => {
     try {
       let date;
       
+      // 🔧 FIX: Si ya es YYYY-MM-DD, devolverlo tal cual
+      if (typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+        return dateString;
+      }
+      
+      // Si es string con guiones, parsear localmente
       if (typeof dateString === 'string' && dateString.includes('-')) {
         const [year, month, day] = dateString.split('-').map(Number);
         date = new Date(year, month - 1, day);
@@ -79,6 +85,7 @@ export const SettingsProvider = ({ children }) => {
         date = new Date(dateString);
       }
       
+      // Usar componentes locales (no UTC)
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');

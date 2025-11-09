@@ -49,6 +49,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
   const paidMonthlyCount = monthlyPayments.filter(p => p.status === 'paid').length;
 
   const handleUpdateDate = async (paymentId, newDate) => {
+    // 🔧 FIX: La fecha ya viene en formato YYYY-MM-DD correcto
     const updated = scheduledPayments.map(sp =>
       sp.id === paymentId ? { ...sp, dueDate: newDate } : sp
     );
@@ -74,13 +75,26 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
 
   const downPaymentPending = (client.downPayment || 0) - (client.downPaymentPaid || 0);
   const platesPending = (client.platesAmount || 0) - (client.platesPaid || 0);
+  
+  // 🔧 FIX: Calcular pagos atrasados comparando fechas correctamente
   const overduePayments = scheduledPayments.filter(sp => {
+    if (sp.status === 'paid' || sp.remainingAmount <= 0) return false;
+    
     const today = new Date();
-    const dueDate = new Date(sp.dueDate);
-    return sp.status !== 'paid' && dueDate < today;
+    today.setHours(0, 0, 0, 0);
+    
+    // Parsear dueDate como fecha local
+    const [year, month, day] = sp.dueDate.split('-').map(Number);
+    const dueDate = new Date(year, month - 1, day);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    return dueDate < today;
   });
 
-  const nextPaymentDate = scheduledPayments.find(sp => sp.status === 'pending' && sp.type === 'monthly')?.dueDate;
+  // 🔧 FIX: Encontrar próximo pago comparando fechas correctamente
+  const nextPaymentDate = scheduledPayments
+    .filter(sp => sp.status === 'pending' && sp.type === 'monthly')
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]?.dueDate;
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -98,7 +112,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
               </p>
             </div>
             <div className="flex items-center gap-3">
-              {/* 🆕 BOTÓN DE GENERAR CONTRATOS */}
+              {/* Botón de Generar Contratos */}
               <button
                 onClick={() => setShowContractGenerator(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium shadow-lg"
@@ -161,6 +175,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
           <div className="bg-white rounded-lg shadow p-6">
             <p className="text-sm text-gray-600 mb-1">Pago Mensual</p>
             <p className="text-3xl font-bold text-orange-600">{formatCurrency(client.monthlyPayment || 0)}</p>
+            {/* 🔧 FIX: formatDate ya maneja las fechas correctamente */}
             <p className="text-xs text-gray-500 mt-1">Próximo: {nextPaymentDate ? formatDate(nextPaymentDate) : 'N/A'}</p>
           </div>
         </div>
@@ -188,6 +203,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
                       <p className="font-semibold text-yellow-800">Enganche Pendiente</p>
                       <p className="text-sm text-yellow-700">
                         {formatCurrency(downPaymentPending)}
+                        {/* 🔧 FIX: formatDate maneja las fechas correctamente */}
                         {client.downPaymentDueDate && ` - Vence: ${formatDate(client.downPaymentDueDate)}`}
                       </p>
                     </div>
@@ -209,6 +225,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
                       <p className="font-semibold text-blue-800">Placas Pendientes</p>
                       <p className="text-sm text-blue-700">
                         {formatCurrency(platesPending)}
+                        {/* 🔧 FIX: formatDate maneja las fechas correctamente */}
                         {client.platesDueDate && ` - Vence: ${formatDate(client.platesDueDate)}`}
                       </p>
                     </div>
@@ -262,6 +279,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
                               <span className={`px-3 py-1 text-xs font-semibold rounded-full ${payment.paymentType === 'monthly' ? 'bg-green-100 text-green-800' : payment.paymentType === 'downpayment' ? 'bg-yellow-100 text-yellow-800' : payment.paymentType === 'plates' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}`}>
                                 {payment.paymentType === 'monthly' ? 'Pago Mensual' : payment.paymentType === 'downpayment' ? 'Enganche' : payment.paymentType === 'plates' ? 'Placas' : 'Otro'}
                               </span>
+                              {/* 🔧 FIX: formatDate maneja las fechas correctamente */}
                               <span className="text-sm text-gray-600">{formatDate(payment.paymentDate)}</span>
                             </div>
                             <div className="flex items-center gap-4 mb-2">
@@ -314,6 +332,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
                 <div>
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalles Financieros</h3>
                   <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
+                    {/* 🔧 FIX: formatDate maneja las fechas correctamente */}
                     <div><p className="text-sm text-gray-600">Fecha de Compra</p><p className="font-medium">{formatDate(client.purchaseDate)}</p></div>
                     <div><p className="text-sm text-gray-600">Inicio de Pagos</p><p className="font-medium">{formatDate(client.paymentStartDate)}</p></div>
                     <div><p className="text-sm text-gray-600">Balance Original</p><p className="font-medium text-lg">{formatCurrency(client.totalBalance || 0)}</p></div>
@@ -337,7 +356,7 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
         </div>
       </div>
 
-      {/* 🆕 MODAL DE GENERADOR DE CONTRATOS */}
+      {/* Modal de Generador de Contratos */}
       {showContractGenerator && (
         <ContractGenerator
           client={client}

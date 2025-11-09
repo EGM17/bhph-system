@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ArrowLeft, ToggleLeft, ToggleRight } from 'lucide-react';
+import { ArrowLeft, ToggleLeft, ToggleRight, FileText } from 'lucide-react';
 import { getTodayString } from '../utils/dateHelpers';
 import CustomPaymentScheduleEditor from './CustomPaymentScheduleEditor';
+import CreditApplicationEditor from './CreditApplicationEditor';
 
 export default function ClientFormPage({ client, onSave, onCancel }) {
   const [formData, setFormData] = useState(client || {
@@ -25,20 +26,33 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
     paymentStartDate: getTodayString(),
     status: 'active',
     notes: '',
-    // 🆕 Nuevos campos
+    // Campos de pagos personalizados
     useCustomSchedule: client?.useCustomSchedule || false,
-    customPaymentSchedule: client?.customPaymentSchedule || null
+    customPaymentSchedule: client?.customPaymentSchedule || null,
+    // 🆕 Campos de aplicación de crédito
+    hasCreditApplication: client?.hasCreditApplication || false,
+    creditApplication: client?.creditApplication || null
   });
 
   const [customScheduleValid, setCustomScheduleValid] = useState(true);
   const [customScheduleData, setCustomScheduleData] = useState(null);
+  
+  // 🆕 Estados para aplicación de crédito
+  const [creditApplicationValid, setCreditApplicationValid] = useState(true);
+  const [creditApplicationData, setCreditApplicationData] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    // Validar si usa schedule personalizado
+    // Validar schedule personalizado
     if (formData.useCustomSchedule && !customScheduleValid) {
       alert('Por favor ajusta los montos del calendario personalizado para que sumen el balance total.');
+      return;
+    }
+    
+    // 🆕 Validar aplicación de crédito
+    if (formData.hasCreditApplication && !creditApplicationValid) {
+      alert('Por favor completa todos los campos requeridos de la aplicación de crédito.');
       return;
     }
     
@@ -52,8 +66,10 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
       platesPending,
       remainingBalance: client ? formData.remainingBalance : formData.totalBalance,
       lastPaymentDate: formData.paymentStartDate,
-      // 🆕 Guardar schedule personalizado si está activo
-      customPaymentSchedule: formData.useCustomSchedule ? customScheduleData : null
+      // Guardar schedule personalizado si está activo
+      customPaymentSchedule: formData.useCustomSchedule ? customScheduleData : null,
+      // 🆕 Guardar aplicación de crédito si está activa
+      creditApplication: formData.hasCreditApplication ? creditApplicationData : null
     });
   };
 
@@ -72,9 +88,23 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
     }));
   };
 
+  // 🆕 Toggle para aplicación de crédito
+  const handleToggleCreditApplication = () => {
+    setFormData(prev => ({
+      ...prev,
+      hasCreditApplication: !prev.hasCreditApplication
+    }));
+  };
+
   const handleCustomScheduleChange = (schedule, isValid) => {
     setCustomScheduleData(schedule);
     setCustomScheduleValid(isValid);
+  };
+
+  // 🆕 Manejar cambios en aplicación de crédito
+  const handleCreditApplicationChange = (data, isValid) => {
+    setCreditApplicationData(data);
+    setCreditApplicationValid(isValid);
   };
 
   return (
@@ -311,7 +341,7 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
             </div>
           </div>
 
-          {/* 🆕 SECCIÓN DE PAGOS PERSONALIZADOS */}
+          {/* SECCIÓN DE PAGOS PERSONALIZADOS */}
           <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow p-6 border-2 border-purple-200">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -379,6 +409,72 @@ export default function ClientFormPage({ client, onSave, onCancel }) {
                 </div>
                 <p className="text-sm text-gray-500 mt-2">
                   Activa "Pagos Personalizados" si necesitas montos diferentes por mes
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 🆕 SECCIÓN DE APLICACIÓN DE CRÉDITO */}
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow p-6 border-2 border-orange-200">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-semibold text-orange-900 flex items-center gap-2">
+                  <FileText className="w-6 h-6" />
+                  Aplicación de Crédito
+                </h2>
+                <p className="text-sm text-orange-700 mt-1">
+                  {formData.hasCreditApplication 
+                    ? 'Captura la información para generar el formulario de crédito' 
+                    : 'Información opcional para documentación completa'}
+                </p>
+              </div>
+              
+              <button
+                type="button"
+                onClick={handleToggleCreditApplication}
+                className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition shadow-md ${
+                  formData.hasCreditApplication
+                    ? 'bg-orange-600 text-white hover:bg-orange-700'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-300'
+                }`}
+              >
+                {formData.hasCreditApplication ? (
+                  <>
+                    <ToggleRight className="w-5 h-5" />
+                    Con Aplicación
+                  </>
+                ) : (
+                  <>
+                    <ToggleLeft className="w-5 h-5" />
+                    Sin Aplicación
+                  </>
+                )}
+              </button>
+            </div>
+
+            {formData.hasCreditApplication ? (
+              <div className="bg-white rounded-lg p-4">
+                <div className="mb-4 bg-blue-50 border-l-4 border-blue-400 p-3 rounded">
+                  <p className="text-sm text-blue-800">
+                    📋 <strong>Información:</strong> Completa los datos del cliente para poder generar 
+                    el documento "Credit Application" desde la sección de contratos. Los campos marcados 
+                    con * son obligatorios.
+                  </p>
+                </div>
+                
+                <CreditApplicationEditor
+                  initialData={formData.creditApplication}
+                  onChange={handleCreditApplicationChange}
+                />
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg p-6 text-center">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-2">
+                  Aplicación de crédito desactivada
+                </p>
+                <p className="text-sm text-gray-500">
+                  Activa esta opción si necesitas generar el documento de aplicación de crédito
                 </p>
               </div>
             )}

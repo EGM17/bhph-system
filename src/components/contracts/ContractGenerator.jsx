@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { FileText, Download, Eye, X } from 'lucide-react';
 import RegistrationNotice from './RegistrationNotice';
 import DocumentsPurchase from './DocumentsPurchase';
+import CreditApplication from './CreditApplication';
 import { generatePDF, previewPDF } from '../../utils/pdfGenerator';
 
 /**
@@ -27,7 +28,8 @@ export default function ContractGenerator({ client, onClose }) {
       nameEs: 'Aviso de Costo de Registro',
       description: 'Notificación bilingüe sobre el costo del registro del vehículo',
       component: RegistrationNotice,
-      hasOptions: false
+      hasOptions: false,
+      requiresCreditApp: false
     },
     {
       id: 'documents-purchase',
@@ -35,7 +37,17 @@ export default function ContractGenerator({ client, onClose }) {
       nameEs: 'Documentos Requeridos para Comprar',
       description: 'Lista de documentos requeridos con checkboxes personalizables',
       component: DocumentsPurchase,
-      hasOptions: true
+      hasOptions: true,
+      requiresCreditApp: false
+    },
+    {
+      id: 'credit-application',
+      name: 'Credit Application',
+      nameEs: 'Aplicación de Crédito',
+      description: 'Formulario completo de aplicación de crédito con información de empleo y residencia',
+      component: CreditApplication,
+      hasOptions: false,
+      requiresCreditApp: true
     }
   ];
 
@@ -73,6 +85,11 @@ export default function ContractGenerator({ client, onClose }) {
     ? contracts.find(c => c.id === selectedContract)?.component 
     : null;
 
+  // Verificar si el contrato seleccionado requiere aplicación de crédito
+  const selectedContractInfo = contracts.find(c => c.id === selectedContract);
+  const requiresCreditApp = selectedContractInfo?.requiresCreditApp;
+  const hasCreditApp = client.hasCreditApplication && client.creditApplication;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full my-8">
@@ -101,31 +118,56 @@ export default function ContractGenerator({ client, onClose }) {
                 Selecciona el contrato a generar:
               </h4>
               <div className="space-y-3">
-                {contracts.map(contract => (
-                  <button
-                    key={contract.id}
-                    onClick={() => setSelectedContract(contract.id)}
-                    className="w-full text-left p-4 border-2 border-gray-200 rounded-lg hover:border-purple-500 hover:bg-purple-50 transition group"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h5 className="font-semibold text-gray-800 group-hover:text-purple-700">
-                          {contract.name}
-                        </h5>
-                        <p className="text-sm text-gray-600 mt-1">{contract.nameEs}</p>
-                        <p className="text-xs text-gray-500 mt-2">{contract.description}</p>
+                {contracts.map(contract => {
+                  const isDisabled = contract.requiresCreditApp && !hasCreditApp;
+                  
+                  return (
+                    <button
+                      key={contract.id}
+                      onClick={() => !isDisabled && setSelectedContract(contract.id)}
+                      disabled={isDisabled}
+                      className={`w-full text-left p-4 border-2 rounded-lg transition group ${
+                        isDisabled 
+                          ? 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed' 
+                          : 'border-gray-200 hover:border-purple-500 hover:bg-purple-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <h5 className={`font-semibold ${isDisabled ? 'text-gray-500' : 'text-gray-800 group-hover:text-purple-700'}`}>
+                              {contract.name}
+                            </h5>
+                            {contract.requiresCreditApp && (
+                              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-800 font-medium">
+                                Requiere App. Crédito
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1">{contract.nameEs}</p>
+                          <p className="text-xs text-gray-500 mt-2">{contract.description}</p>
+                          {isDisabled && (
+                            <div className="mt-2 bg-orange-50 border-l-4 border-orange-400 p-2 rounded">
+                              <p className="text-xs text-orange-800">
+                                ⚠️ <strong>No disponible:</strong> Activa y completa la "Aplicación de Crédito" 
+                                en la edición del cliente para generar este documento.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        <FileText className={`w-8 h-8 transition ${isDisabled ? 'text-gray-300' : 'text-gray-400 group-hover:text-purple-600'}`} />
                       </div>
-                      <FileText className="w-8 h-8 text-gray-400 group-hover:text-purple-600 transition" />
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
 
-              {contracts.length === 1 && (
+              {!hasCreditApp && (
                 <div className="mt-6 bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
                   <p className="text-sm text-blue-800">
-                    <strong>💡 Tip:</strong> Se agregarán más contratos próximamente. 
-                    Por ahora puedes generar el aviso de registro.
+                    <strong>💡 Tip:</strong> Para poder generar el contrato de "Credit Application", 
+                    primero debes activar y completar la información de crédito en la página de 
+                    edición del cliente.
                   </p>
                 </div>
               )}

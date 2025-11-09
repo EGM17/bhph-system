@@ -1,11 +1,64 @@
-// Utilidades para generar y manejar pagos programados
-import { toLocaleDateString, addMonths } from './dateHelpers';
+// 🔧 FIXED: Utilidades para generar y manejar pagos programados SIN bugs de UTC
+// Este archivo corrige el problema de que las fechas se agendan un día antes
 
+/**
+ * 🔧 FIX: Convierte un string de fecha a formato YYYY-MM-DD local
+ */
+export const toLocaleDateString = (date) => {
+  if (!date) return '';
+  
+  // Si ya es un string YYYY-MM-DD, devolverlo
+  if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return date;
+  }
+  
+  const d = new Date(date);
+  
+  // Usar componentes LOCALES (no UTC)
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+};
+
+/**
+ * 🔧 FIX: Agrega meses a una fecha MANTENIENDO el día correcto
+ * Problema anterior: new Date('2025-11-10') creaba fecha UTC que se mostraba como 11-09
+ * Solución: Parsear como fecha local
+ */
+export const addMonths = (dateString, months) => {
+  // Parsear la fecha como LOCAL, no UTC
+  let year, month, day;
+  
+  if (typeof dateString === 'string' && dateString.includes('-')) {
+    [year, month, day] = dateString.split('-').map(Number);
+  } else {
+    const d = new Date(dateString);
+    year = d.getFullYear();
+    month = d.getMonth() + 1;
+    day = d.getDate();
+  }
+  
+  // Crear nueva fecha sumando los meses (mes 0-indexed)
+  const newDate = new Date(year, month - 1 + months, day);
+  
+  // Convertir a string YYYY-MM-DD
+  const newYear = newDate.getFullYear();
+  const newMonth = String(newDate.getMonth() + 1).padStart(2, '0');
+  const newDay = String(newDate.getDate()).padStart(2, '0');
+  
+  return `${newYear}-${newMonth}-${newDay}`;
+};
+
+/**
+ * Genera todos los pagos programados para un cliente
+ */
 export const generateScheduledPayments = (client) => {
   const scheduledPayments = [];
   const startDate = client.paymentStartDate;
   
-  // 🆕 NUEVA LÓGICA: Detectar si usa schedule personalizado
+  // Verificar si usa schedule personalizado
   if (client.useCustomSchedule && client.customPaymentSchedule && Array.isArray(client.customPaymentSchedule)) {
     // Usar pagos personalizados
     client.customPaymentSchedule.forEach((customPay, index) => {
@@ -25,7 +78,7 @@ export const generateScheduledPayments = (client) => {
       });
     });
   } else {
-    // Usar pagos estándar (lógica original)
+    // Usar pagos estándar
     for (let i = 0; i < client.numberOfPayments; i++) {
       const dueDate = addMonths(startDate, i);
       
@@ -91,10 +144,14 @@ export const generateScheduledPayments = (client) => {
   return scheduledPayments;
 };
 
+/**
+ * 🔧 FIXED: Calcula el estado de un pago programado comparando fechas correctamente
+ */
 export const calculatePaymentStatus = (scheduledPayment) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   
+  // 🔧 FIX: Parsear dueDate como fecha LOCAL
   const [year, month, day] = scheduledPayment.dueDate.split('-').map(Number);
   const dueDate = new Date(year, month - 1, day);
   dueDate.setHours(0, 0, 0, 0);
