@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Phone, MapPin, Car, DollarSign, Calendar, FileText, AlertCircle, Edit2, Trash2 } from 'lucide-react';
 import PaymentSchedule from './PaymentSchedule';
+import ContractGenerator from './contracts/ContractGenerator';
 import { generateScheduledPayments } from '../utils/paymentScheduler';
 import { useSettings } from '../context/SettingsContext';
 
 export default function ClientDetailPage({ client, payments, onClose, onUpdateClient, onAddPayment, onEditPayment, onDeletePayment }) {
   const [activeTab, setActiveTab] = useState('schedule');
   const [scheduledPayments, setScheduledPayments] = useState([]);
+  const [showContractGenerator, setShowContractGenerator] = useState(false);
   const { formatDate, formatCurrency } = useSettings();
 
   useEffect(() => {
@@ -78,7 +80,6 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
     return sp.status !== 'paid' && dueDate < today;
   });
 
-  // 🔧 FIX: Obtener próxima fecha de pago formateada
   const nextPaymentDate = scheduledPayments.find(sp => sp.status === 'pending' && sp.type === 'monthly')?.dueDate;
 
   return (
@@ -96,7 +97,17 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
                 {client.vehicleYear} {client.vehicleMake} {client.vehicleModel}
               </p>
             </div>
-            <div className="text-right">
+            <div className="flex items-center gap-3">
+              {/* 🆕 BOTÓN DE GENERAR CONTRATOS */}
+              <button
+                onClick={() => setShowContractGenerator(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition font-medium shadow-lg"
+              >
+                <FileText className="w-5 h-5" />
+                <span className="hidden sm:inline">Generar Contratos</span>
+                <span className="sm:hidden">Contratos</span>
+              </button>
+              
               <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold ${
                 client.status === 'active' ? 'bg-green-500' :
                 client.status === 'paid' ? 'bg-blue-500' : 'bg-red-500'
@@ -325,6 +336,14 @@ export default function ClientDetailPage({ client, payments, onClose, onUpdateCl
           </div>
         </div>
       </div>
+
+      {/* 🆕 MODAL DE GENERADOR DE CONTRATOS */}
+      {showContractGenerator && (
+        <ContractGenerator
+          client={client}
+          onClose={() => setShowContractGenerator(false)}
+        />
+      )}
     </div>
   );
 }
