@@ -9,7 +9,8 @@ import PaymentForm from './components/PaymentForm';
 import ClientDetailPage from './components/ClientDetailPage';
 import SettingsPage from './components/SettingsPage';
 import Login from './components/Login';
-import { Home, Users, DollarSign, Plus, LogOut, Settings } from 'lucide-react';
+import InventoryList from './components/inventory/InventoryList';  // 🆕 NUEVO
+import { Home, Users, DollarSign, Plus, LogOut, Settings, Car } from 'lucide-react';  // 🆕 Agregado Car
 
 import { db } from './config/firebase';
 import { 
@@ -410,7 +411,8 @@ function AppContent() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'clients', label: 'Clientes', icon: Users },
-    { id: 'payments', label: 'Pagos', icon: DollarSign }
+    { id: 'payments', label: 'Pagos', icon: DollarSign },
+    { id: 'inventory', label: 'Inventario', icon: Car }  // 🆕 NUEVO
   ];
 
   if (!user) {
@@ -574,6 +576,11 @@ function AppContent() {
         
         {currentView === 'payments' && (
           <PaymentHistory payments={payments} clients={clients} />
+        )}
+
+        {/* 🆕 NUEVO - Vista de Inventario */}
+        {currentView === 'inventory' && (
+          <InventoryList />
         )}
       </main>
     </div>
