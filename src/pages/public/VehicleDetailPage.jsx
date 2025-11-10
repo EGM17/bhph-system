@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, MapPin, Gauge, Calendar, Phone, Mail, Heart } from 'lucide-react';
+import { ArrowLeft, MapPin, Gauge, Calendar, Phone, Mail, Heart, Zap } from 'lucide-react';
 import { useVehicle } from '../../hooks/usePublicVehicles';
 import { formatVehicleTitle } from '../../services/vinService';
 import { createLead } from '../../services/leadService';
@@ -54,6 +54,8 @@ export default function VehicleDetailPage() {
   const title = formatVehicleTitle(vehicle);
   const images = vehicle.images || [];
   const primaryImage = images.find(img => img.isPrimary) || images[0];
+  const isInHouseFinancing = vehicle.financingType === 'in-house';
+  const isCashOnly = vehicle.financingType === 'cash-only';
 
   const handleContactSubmit = async (e) => {
     e.preventDefault();
@@ -83,14 +85,14 @@ export default function VehicleDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb */}
-      <div className="bg-white border-b">
+      {/* Back Button */}
+      <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <button
             onClick={() => navigate('/inventory')}
-            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 transition"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
             Volver al Inventario
           </button>
         </div>
@@ -98,11 +100,13 @@ export default function VehicleDetailPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Columna Izquierda - Imágenes */}
+          
+          {/* Columna Izquierda - Imágenes e Info */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            {/* Galería de Imágenes */}
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
               {/* Imagen Principal */}
-              <div className="relative aspect-video bg-gray-200">
+              <div className="aspect-[16/10] bg-gray-200 relative">
                 {images.length > 0 ? (
                   <img
                     src={images[selectedImage]?.url || primaryImage?.url}
@@ -111,27 +115,35 @@ export default function VehicleDetailPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <span className="text-gray-400">Sin imagen</span>
+                    <svg className="w-32 h-32 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+                      <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
+                    </svg>
                   </div>
                 )}
+
+                {/* Favorite Button */}
+                <button className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition shadow-lg">
+                  <Heart className="w-6 h-6 text-gray-700" />
+                </button>
               </div>
 
               {/* Thumbnails */}
               {images.length > 1 && (
-                <div className="p-4 bg-gray-50 flex gap-2 overflow-x-auto">
-                  {images.map((img, index) => (
+                <div className="p-4 grid grid-cols-6 gap-2">
+                  {images.map((image, index) => (
                     <button
                       key={index}
                       onClick={() => setSelectedImage(index)}
-                      className={`flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 transition ${
+                      className={`aspect-square rounded-lg overflow-hidden border-2 transition ${
                         selectedImage === index
                           ? 'border-blue-600'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-transparent hover:border-gray-300'
                       }`}
                     >
                       <img
-                        src={img.url}
-                        alt={`${title} - ${index + 1}`}
+                        src={image.url}
+                        alt={`Vista ${index + 1}`}
                         className="w-full h-full object-cover"
                       />
                     </button>
@@ -141,10 +153,11 @@ export default function VehicleDetailPage() {
             </div>
 
             {/* Descripción y Características */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">
                 Descripción
               </h2>
+
               {vehicle.description ? (
                 <p className="text-gray-600 leading-relaxed whitespace-pre-line">
                   {vehicle.description}
@@ -179,164 +192,223 @@ export default function VehicleDetailPage() {
           {/* Columna Derecha - Info y Contacto */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-4">
-              {/* Título y Precio */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                {title}
-              </h1>
-
-              <div className="mb-6">
-                <p className="text-sm text-gray-600">Precio</p>
-                <p className="text-4xl font-bold text-blue-600">
-                  ${vehicle.price?.toLocaleString()}
-                </p>
+              {/* Título y Badge */}
+              <div className="mb-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-3">
+                  {title}
+                </h1>
+                
+                {/* Badge de tipo de financiamiento */}
+                {isInHouseFinancing && (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-xl text-sm font-bold shadow-lg">
+                    0% DE INTERESES
+                  </span>
+                )}
+                
+                {isCashOnly && (
+                  <span className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-sm font-bold shadow-lg">
+                    SOLO EFECTIVO
+                  </span>
+                )}
               </div>
 
-              {/* Especificaciones Básicas */}
+              {/* Precio o Información de Financiamiento */}
+              <div className="mb-6">
+                {isInHouseFinancing ? (
+                  // Financiamiento en Casa
+                  <>
+                    {vehicle.showMonthlyPayment !== false && vehicle.monthlyPaymentFrom && (
+                      <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-2 border-orange-300 rounded-xl p-4 mb-3">
+                        <p className="text-sm text-orange-700 font-medium mb-2">
+                          Pago mensual desde
+                        </p>
+                        <p className="text-4xl font-bold text-orange-700">
+                          ${vehicle.monthlyPaymentFrom}
+                          <span className="text-lg font-normal">/mes</span>
+                        </p>
+                        {vehicle.showDownPayment !== false && vehicle.downPaymentFrom && (
+                          <p className="text-sm text-orange-600 mt-2">
+                            Enganche desde ${vehicle.downPaymentFrom?.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : isCashOnly ? (
+                  // Solo Efectivo
+                  vehicle.showPrice !== false && vehicle.price ? (
+                    <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-xl p-4 text-center">
+                      <p className="text-sm text-green-700 font-medium mb-2">Precio</p>
+                      <p className="text-5xl font-bold text-green-700">
+                        ${vehicle.price?.toLocaleString()}
+                      </p>
+                      <p className="text-xs text-green-800 font-semibold mt-3 pt-3 border-t border-green-200">
+                        💵 Pago completo al contado
+                      </p>
+                    </div>
+                  ) : null
+                ) : null}
+              </div>
+
+              {/* Especificaciones - CON MPG */}
               <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Calendar className="w-5 h-5 text-gray-400" />
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Calendar className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-500">Año</p>
-                    <p className="font-semibold">{vehicle.year}</p>
+                    <p className="font-semibold text-gray-900">{vehicle.year}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-gray-700">
-                  <Gauge className="w-5 h-5 text-gray-400" />
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Gauge className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="text-xs text-gray-500">Millaje</p>
-                    <p className="font-semibold">{vehicle.mileage?.toLocaleString()} mi</p>
+                    <p className="font-semibold text-gray-900">{vehicle.mileage?.toLocaleString()} mi</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-gray-700">
-                  <MapPin className="w-5 h-5 text-gray-400" />
-                  <div>
-                    <p className="text-xs text-gray-500">Ubicación</p>
-                    <p className="font-semibold">Salem, OR</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-gray-700">
-                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                     <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
                   </svg>
                   <div>
-                    <p className="text-xs text-gray-500">Tipo</p>
-                    <p className="font-semibold">{vehicle.bodyClass || 'N/A'}</p>
+                    <p className="text-xs text-gray-500">Carrocería</p>
+                    <p className="font-semibold text-gray-900">{vehicle.bodyClass || 'Sedan'}</p>
+                  </div>
+                </div>
+
+                {/* NUEVO: MPG en lugar de Stock# */}
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Zap className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">MPG</p>
+                    <p className="font-semibold text-gray-900">{vehicle.mpg || 'N/A'}</p>
                   </div>
                 </div>
               </div>
 
-              {/* Pago Mensual */}
-              {vehicle.monthlyPaymentFrom && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-green-700 font-medium mb-1">
-                    Pago mensual desde
-                  </p>
-                  <p className="text-3xl font-bold text-green-700">
-                    ${vehicle.monthlyPaymentFrom}
-                    <span className="text-base font-normal">/mes</span>
-                  </p>
-                  {vehicle.downPaymentFrom && (
-                    <p className="text-sm text-green-600 mt-2">
-                      Enganche desde ${vehicle.downPaymentFrom.toLocaleString()}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Botones de Acción */}
+              {/* Botones de Contacto - NUEVO DISEÑO MINIMALISTA */}
               <div className="space-y-3">
-                <button
-                  onClick={() => setShowContactForm(!showContactForm)}
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition font-bold text-lg shadow-lg"
-                >
-                  <Mail className="w-5 h-5" />
-                  {showContactForm ? 'Cerrar Formulario' : 'Me Interesa Este Auto'}
-                </button>
-
+                {/* Botón Principal: Llamar (siempre visible y prominente) */}
                 <a
-                  href="tel:5038789550"
-                  className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition font-bold text-lg shadow-lg"
+                  href="tel:+15038789550"
+                  className={`w-full px-6 py-4 rounded-xl transition font-bold text-lg shadow-lg flex items-center justify-center gap-2 ${
+                    vehicle.showPrice === false 
+                      ? 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+                      : 'bg-green-600 text-white hover:bg-green-700'
+                  }`}
                 >
                   <Phone className="w-5 h-5" />
-                  Llamar Ahora
+                  {vehicle.showPrice === false ? 'Llamar' : 'Llamar Ahora'}
                 </a>
 
+                {/* Botón Secundario: Mensaje */}
                 <button
-                  className="w-full flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition font-medium"
+                  onClick={() => setShowContactForm(!showContactForm)}
+                  className="w-full px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-xl hover:bg-blue-50 transition font-semibold text-base flex items-center justify-center gap-2"
                 >
-                  <Heart className="w-5 h-5" />
-                  Guardar en Favoritos
+                  <Mail className="w-5 h-5" />
+                  Enviar Mensaje
                 </button>
               </div>
 
-              {/* Formulario de Contacto */}
-              {showContactForm && (
-                <form onSubmit={handleContactSubmit} className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-lg font-bold text-gray-900 mb-4">
-                    Contáctanos
-                  </h3>
-
-                  <div className="space-y-4">
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="Nombre completo *"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <input
-                        type="tel"
-                        placeholder="Teléfono *"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <div>
-                      <textarea
-                        placeholder="Mensaje (opcional)"
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        rows="3"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-bold"
-                    >
-                      {submitting ? 'Enviando...' : 'Enviar Mensaje'}
-                    </button>
+              {/* Ubicación */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex items-center gap-2 text-gray-600">
+                  <MapPin className="w-5 h-5 text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Ubicación</p>
+                    <p className="font-semibold text-gray-900">915 12th ST SE Salem, OR 97302</p>
                   </div>
-                </form>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Formulario de Contacto Modal */}
+      {showContactForm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-900">
+                Contactar Vendedor
+              </h3>
+              <button
+                onClick={() => setShowContactForm(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition"
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleContactSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Teléfono *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mensaje
+                </label>
+                <textarea
+                  value={formData.message}
+                  onChange={(e) => setFormData({...formData, message: e.target.value})}
+                  rows="4"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder={`Estoy interesado en el ${title}`}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition font-bold"
+              >
+                {submitting ? 'Enviando...' : 'Enviar Mensaje'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

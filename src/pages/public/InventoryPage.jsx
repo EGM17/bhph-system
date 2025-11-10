@@ -40,7 +40,7 @@ export default function InventoryPage() {
       {/* Header de Inventario */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-bold mb-4">Nuestro Inventario</h1>
+          <h1 className="text-4xl font-bold mb-4">Conoce nuestro inventario</h1>
           <p className="text-xl text-blue-100">
             {filteredVehicles.length} vehículos disponibles
           </p>

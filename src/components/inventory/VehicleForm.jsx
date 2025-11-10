@@ -15,12 +15,17 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     year: new Date().getFullYear(),
     trim: '',
     bodyClass: '',
+    mpg: '', // NUEVO: Millas por galón (opcional)
     
     // Información del dealer
     price: 0,
+    showPrice: true, // Controla si se muestra el precio
     mileage: 0,
     condition: 'used',
     status: 'available',
+    
+    // NUEVO: Tipo de financiamiento
+    financingType: 'in-house', // 'in-house' o 'cash-only'
     
     // Imágenes
     images: [],
@@ -29,9 +34,11 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     description: '',
     features: [],
     
-    // Financiamiento (opcional)
+    // Financiamiento (INDEPENDIENTES entre sí)
     downPaymentFrom: 0,
     monthlyPaymentFrom: 0,
+    showDownPayment: true, // Controla si se muestra enganche
+    showMonthlyPayment: true, // Controla si se muestra pago mensual
     
     // Metadata
     isFeatured: false,
@@ -335,6 +342,24 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                     />
                   </div>
 
+                  {/* NUEVO: MPG */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      MPG (Opcional)
+                    </label>
+                    <input
+                      type="text"
+                      name="mpg"
+                      value={formData.mpg}
+                      onChange={handleChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ej: 25 city / 30 hwy"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Millas por galón (ciudad/carretera)
+                    </p>
+                  </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Condición *
@@ -354,63 +379,192 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 </div>
               </div>
 
-              {/* Precio y Financiamiento */}
+              {/* NUEVO: Toggle Tipo de Financiamiento */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  💰 Precio y Financiamiento
+                  🏦 Tipo de Venta
                 </h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio de Venta *
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition ${
+                      formData.financingType === 'in-house' 
+                        ? 'border-orange-500 bg-orange-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
                       <input
-                        type="number"
-                        name="price"
-                        value={formData.price}
+                        type="radio"
+                        name="financingType"
+                        value="in-house"
+                        checked={formData.financingType === 'in-house'}
                         onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-                        required
+                        className="w-5 h-5 text-orange-600"
                       />
+                      <div className="ml-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">🏦</span>
+                          <span className="font-semibold text-gray-900">Financiamiento en Casa</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          0% intereses - Pagos semanales o quincenales
+                        </p>
+                      </div>
+                    </label>
+
+                    <label className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition ${
+                      formData.financingType === 'cash-only' 
+                        ? 'border-green-500 bg-green-50' 
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}>
+                      <input
+                        type="radio"
+                        name="financingType"
+                        value="cash-only"
+                        checked={formData.financingType === 'cash-only'}
+                        onChange={handleChange}
+                        className="w-5 h-5 text-green-600"
+                      />
+                      <div className="ml-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">💵</span>
+                          <span className="font-semibold text-gray-900">Solo Efectivo</span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Pago completo al momento de la compra
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              {/* Precio y Opciones de Visualización */}
+              <div className="bg-white rounded-lg shadow p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
+                  💰 Precio y Opciones de Visualización
+                </h2>
+                
+                <div className="space-y-6">
+                  {/* Precio */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Precio de Venta *
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                        <input
+                          type="number"
+                          name="price"
+                          value={formData.price}
+                          onChange={handleChange}
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="showPrice"
+                          checked={formData.showPrice !== false}
+                          onChange={handleChange}
+                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">
+                            Mostrar precio público
+                          </span>
+                          <p className="text-xs text-gray-500">
+                            Visible en el sitio web
+                          </p>
+                        </div>
+                      </label>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Enganche Desde (opcional)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <input
-                        type="number"
-                        name="downPaymentFrom"
-                        value={formData.downPaymentFrom}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="2000"
-                      />
-                    </div>
-                  </div>
+                  {/* Opciones de Financiamiento - Solo visible si es in-house */}
+                  {formData.financingType === 'in-house' && (
+                    <div className="border-t pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-800">
+                          📊 Información de Financiamiento
+                        </h3>
+                        <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">
+                          0% INTERESES
+                        </span>
+                      </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Pago Mensual Desde (opcional)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                      <input
-                        type="number"
-                        name="monthlyPaymentFrom"
-                        value={formData.monthlyPaymentFrom}
-                        onChange={handleChange}
-                        className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="350"
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Pago Mensual Desde
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <input
+                              type="number"
+                              name="monthlyPaymentFrom"
+                              value={formData.monthlyPaymentFrom}
+                              onChange={handleChange}
+                              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                              placeholder="350"
+                            />
+                          </div>
+                          <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              name="showMonthlyPayment"
+                              checked={formData.showMonthlyPayment !== false}
+                              onChange={handleChange}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-gray-600">
+                              Mostrar en el sitio web
+                            </span>
+                          </label>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Enganche Desde
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                            <input
+                              type="number"
+                              name="downPaymentFrom"
+                              value={formData.downPaymentFrom}
+                              onChange={handleChange}
+                              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                              placeholder="2000"
+                            />
+                          </div>
+                          <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              name="showDownPayment"
+                              checked={formData.showDownPayment !== false}
+                              onChange={handleChange}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-xs text-gray-600">
+                              Mostrar en el sitio web
+                            </span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                        <p className="text-sm text-orange-800">
+                          <strong>💡 Importante:</strong> Los checkboxes controlan qué información se muestra públicamente. 
+                          Puedes ocultar cualquier dato individualmente sin afectar los demás.
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -474,13 +628,13 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                         {formData.features.map((feature, index) => (
                           <span
                             key={index}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
                           >
                             {feature}
                             <button
                               type="button"
                               onClick={() => handleRemoveFeature(index)}
-                              className="hover:text-blue-900"
+                              className="text-blue-600 hover:text-blue-800"
                             >
                               ×
                             </button>
@@ -499,49 +653,51 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 </h2>
                 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isFeatured"
+                      checked={formData.isFeatured}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                    />
                     <div>
-                      <p className="font-medium text-gray-800">Publicar en sitio web</p>
-                      <p className="text-sm text-gray-600">El vehículo será visible para el público</p>
+                      <span className="text-sm font-medium text-gray-700">
+                        ⭐ Vehículo Destacado
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        Aparecerá en la sección de destacados del homepage
+                      </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="isPublished"
-                        checked={formData.isPublished}
-                        onChange={handleChange}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                    </label>
-                  </div>
+                  </label>
 
-                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="isPublished"
+                      checked={formData.isPublished}
+                      onChange={handleChange}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                    />
                     <div>
-                      <p className="font-medium text-gray-800">Vehículo destacado</p>
-                      <p className="text-sm text-gray-600">Aparecerá en la sección de destacados del inicio</p>
+                      <span className="text-sm font-medium text-gray-700">
+                        🌐 Publicar en el sitio web
+                      </span>
+                      <p className="text-xs text-gray-500">
+                        El vehículo será visible para el público
+                      </p>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="isFeatured"
-                        checked={formData.isFeatured}
-                        onChange={handleChange}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-yellow-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-500"></div>
-                    </label>
-                  </div>
+                  </label>
 
-                  <div className="p-4 bg-gray-50 rounded-lg">
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estado del Inventario
+                      Estado del Vehículo
                     </label>
                     <select
                       name="status"
                       value={formData.status}
                       onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="available">Disponible</option>
                       <option value="pending">Pendiente</option>

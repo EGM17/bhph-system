@@ -17,17 +17,17 @@ export default function Hero() {
           <div className="space-y-8">
             <div>
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
-                🚗 Tu Dealer de Confianza en Salem, OR
+                Autos con financiamiento en casa en Salem, Oregon.
               </span>
               <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-                Encuentra Tu
+                Autos financiados
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">
-                  Auto Ideal
+                  con 0% de interés.
                 </span>
               </h1>
               <p className="text-xl text-blue-100 leading-relaxed">
-                Financiamiento fácil y rápido para todos. Sin importar tu crédito, 
-                tenemos opciones para ti. ¡Maneja hoy mismo!
+                Ofrecemos financiamiento fácil y rápido para todos. Sin importar tu crédito, sin ITIN, 
+                sin SSN, sin licencia y sin intereses.
               </p>
             </div>
 
@@ -38,8 +38,8 @@ export default function Hero() {
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Aprobación Rápida</h3>
-                  <p className="text-sm text-blue-100">En minutos, no días</p>
+                  <h3 className="font-semibold mb-1">Aprobación inmediata</h3>
+                  <p className="text-sm text-blue-100">Solo con tres requisitos</p>
                 </div>
               </div>
 
@@ -48,8 +48,8 @@ export default function Hero() {
                   <DollarSign className="w-5 h-5 text-gray-900" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Pagos Flexibles</h3>
-                  <p className="text-sm text-blue-100">Ajustados a tu presupuesto</p>
+                  <h3 className="font-semibold mb-1">Enganches míninos</h3>
+                  <p className="text-sm text-blue-100">Solo pagas un enganche mínimo</p>
                 </div>
               </div>
 
@@ -68,7 +68,7 @@ export default function Hero() {
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Mal Crédito OK</h3>
+                  <h3 className="font-semibold mb-1">Sin checar crédito</h3>
                   <p className="text-sm text-blue-100">Todos son bienvenidos</p>
                 </div>
               </div>
@@ -80,7 +80,7 @@ export default function Hero() {
                 href="/inventory"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 rounded-xl hover:bg-blue-50 transition font-bold text-lg shadow-2xl hover:shadow-3xl group"
               >
-                Ver Inventario
+                Ver inventario
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
               </a>
 
@@ -88,7 +88,7 @@ export default function Hero() {
                 href="/financing"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white/10 transition font-bold text-lg backdrop-blur-sm"
               >
-                Aplicar para Crédito
+                Aplicar para financiamiento
               </a>
             </div>
 

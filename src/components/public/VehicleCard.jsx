@@ -4,13 +4,15 @@ import { formatVehicleTitle } from "../../services/vinService";
 export default function VehicleCard({ vehicle, featured = false }) {
   const primaryImage = vehicle.images?.find(img => img.isPrimary) || vehicle.images?.[0];
   const title = formatVehicleTitle(vehicle);
+  const isInHouseFinancing = vehicle.financingType === 'in-house';
+  const isCashOnly = vehicle.financingType === 'cash-only';
 
   return (
     <a 
       href={`/vehicle/${vehicle.id}`}
       className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden block"
     >
-      {/* Image Container */}
+      {/* Image Container - SIN PRECIO */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-200">
         {primaryImage ? (
           <img
@@ -28,15 +30,29 @@ export default function VehicleCard({ vehicle, featured = false }) {
           </div>
         )}
 
-        {/* Badges */}
+        {/* Badges - NUEVO SISTEMA */}
         <div className="absolute top-4 left-4 flex flex-col gap-2">
           {featured && (
             <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
               ⭐ DESTACADO
             </span>
           )}
+          
+          {/* Badge según tipo de financiamiento */}
+          {isInHouseFinancing && (
+            <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+              🏷️ 0% INTERESES
+            </span>
+          )}
+          
+          {isCashOnly && (
+            <span className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+              💵 SOLO EFECTIVO
+            </span>
+          )}
+
           {vehicle.condition === 'certified' && (
-            <span className="bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
               ✓ CERTIFICADO
             </span>
           )}
@@ -52,14 +68,6 @@ export default function VehicleCard({ vehicle, featured = false }) {
         >
           <Heart className="w-5 h-5 text-gray-700" />
         </button>
-
-        {/* Price Tag */}
-        <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm px-4 py-2 rounded-xl shadow-lg">
-          <p className="text-xs text-gray-600">Precio</p>
-          <p className="text-2xl font-bold text-gray-900">
-            ${vehicle.price?.toLocaleString()}
-          </p>
-        </div>
       </div>
 
       {/* Content */}
@@ -111,23 +119,39 @@ export default function VehicleCard({ vehicle, featured = false }) {
           </div>
         )}
 
-        {/* Payment Info */}
-        {vehicle.monthlyPaymentFrom && (
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 mb-4">
-            <p className="text-xs text-green-700 font-medium mb-1">Pago mensual desde</p>
-            <div className="flex items-baseline gap-1">
-              <p className="text-2xl font-bold text-green-700">
-                ${vehicle.monthlyPaymentFrom}
-              </p>
-              <p className="text-sm text-green-600">/mes</p>
+        {/* Información según tipo de financiamiento */}
+        {isInHouseFinancing ? (
+          // Vehículos con Financiamiento en Casa
+          vehicle.showMonthlyPayment !== false && vehicle.monthlyPaymentFrom ? (
+            <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-3 mb-4">
+              <p className="text-xs text-orange-700 font-medium mb-1">Pago mensual desde</p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-2xl font-bold text-orange-700">
+                  ${vehicle.monthlyPaymentFrom}
+                </p>
+                <p className="text-sm text-orange-600">/mes</p>
+              </div>
+              {vehicle.showDownPayment !== false && vehicle.downPaymentFrom && (
+                <p className="text-xs text-orange-600 mt-1">
+                  Enganche desde ${vehicle.downPaymentFrom?.toLocaleString()}
+                </p>
+              )}
             </div>
-            {vehicle.downPaymentFrom && (
-              <p className="text-xs text-green-600 mt-1">
-                Enganche desde ${vehicle.downPaymentFrom?.toLocaleString()}
+          ) : null
+        ) : isCashOnly ? (
+          // Vehículos Solo Efectivo - Muestra precio si está habilitado
+          vehicle.showPrice !== false && vehicle.price ? (
+            <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-3 mb-4 text-center">
+              <p className="text-xs text-green-700 font-medium mb-1">Precio</p>
+              <p className="text-3xl font-bold text-green-700">
+                ${vehicle.price?.toLocaleString()}
               </p>
-            )}
-          </div>
-        )}
+              <p className="text-xs text-green-800 font-semibold mt-2">
+                PRECIO PROMOCIONAL
+              </p>
+            </div>
+          ) : null
+        ) : null}
 
         {/* CTA Button */}
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">

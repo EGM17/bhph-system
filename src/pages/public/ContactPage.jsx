@@ -49,7 +49,7 @@ export default function ContactPage() {
             Contáctanos
           </h1>
           <p className="text-xl text-blue-100">
-            Estamos aquí para ayudarte. ¡Hablemos!
+            Estamos aquí para ayudarte. ¡Llama ahora o envíanos mensaje!
           </p>
         </div>
       </div>
@@ -73,7 +73,7 @@ export default function ContactPage() {
                     (503) 878-9550
                   </a>
                   <p className="text-sm text-gray-600 mt-1">
-                    Lun - Sáb: 9AM - 6PM
+                    Lun - Dom: 10AM - 7PM
                   </p>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function ContactPage() {
                     href="mailto:info@elcompaguero.com"
                     className="text-blue-600 hover:text-blue-700"
                   >
-                    info@elcompaguero.com
+                    info@elcompagueroautosales.com
                   </a>
                 </div>
               </div>
@@ -126,16 +126,8 @@ export default function ContactPage() {
                   <h3 className="font-bold text-blue-900 mb-3">Horario</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-blue-800">Lunes - Viernes:</span>
-                      <span className="font-medium text-blue-900">9AM - 6PM</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-blue-800">Sábado:</span>
-                      <span className="font-medium text-blue-900">9AM - 5PM</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-blue-800">Domingo:</span>
-                      <span className="font-medium text-blue-900">Cerrado</span>
+                      <span className="text-blue-800">Lunes - Domingo:</span>
+                      <span className="font-medium text-blue-900">10 AM - 7 PM</span>
                     </div>
                   </div>
                 </div>
@@ -143,7 +135,7 @@ export default function ContactPage() {
             </div>
 
             <div className="bg-blue-600 text-white rounded-xl p-6 text-center">
-              <p className="text-xl font-bold mb-2">¡Hablamos Español!</p>
+              <p className="text-xl font-bold mb-2">¡Hablamos ingles y español!</p>
               <p className="text-blue-100">
                 Atención personalizada en tu idioma
               </p>

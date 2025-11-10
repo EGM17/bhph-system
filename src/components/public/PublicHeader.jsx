@@ -33,7 +33,7 @@ export default function PublicHeader() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="hidden sm:inline">Lun - Sáb: 9AM - 6PM</span>
+              <span className="hidden sm:inline">Lun - Dom: 10AM - 7PM</span>
             </div>
           </div>
         </div>
@@ -74,7 +74,7 @@ export default function PublicHeader() {
               to="/inventory"
               className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium shadow-lg hover:shadow-xl"
             >
-              Ver Inventario
+              Ver inventario
             </Link>
           </div>
 
