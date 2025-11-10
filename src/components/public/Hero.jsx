@@ -20,9 +20,9 @@ export default function Hero() {
                 Autos con financiamiento en casa en Salem, Oregon.
               </span>
               <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-                Autos financiados
+                Financiamiento con
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">
-                  con 0% de interés.
+                0% de interés.
                 </span>
               </h1>
               <p className="text-xl text-blue-100 leading-relaxed">

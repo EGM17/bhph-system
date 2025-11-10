@@ -1,4 +1,4 @@
-import { ArrowRight, Gauge, MapPin, Calendar, Heart } from 'lucide-react';
+import { ArrowRight, Gauge, MapPin, Calendar } from 'lucide-react';
 import { formatVehicleTitle } from "../../services/vinService";
 
 export default function VehicleCard({ vehicle, featured = false }) {
@@ -10,10 +10,10 @@ export default function VehicleCard({ vehicle, featured = false }) {
   return (
     <a 
       href={`/vehicle/${vehicle.id}`}
-      className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden block"
+      className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-100"
     >
-      {/* Image Container - SIN PRECIO */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-gray-200">
+      {/* Image Container */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
         {primaryImage ? (
           <img
             src={primaryImage.url}
@@ -22,143 +22,121 @@ export default function VehicleCard({ vehicle, featured = false }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-200 to-gray-300">
-            <svg className="w-20 h-20 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <div className="w-full h-full flex items-center justify-center bg-gray-100">
+            <svg className="w-16 h-16 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
               <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
               <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
             </svg>
           </div>
         )}
 
-        {/* Badges - NUEVO SISTEMA */}
-        <div className="absolute top-4 left-4 flex flex-col gap-2">
+        {/* Badges Minimalistas */}
+        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           {featured && (
-            <span className="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              ⭐ DESTACADO
+            <span className="bg-gray-900/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
+              Destacado
             </span>
           )}
           
-          {/* Badge según tipo de financiamiento */}
           {isInHouseFinancing && (
-            <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              🏷️ 0% INTERESES
+            <span className="bg-blue-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
+              0% Intereses
             </span>
           )}
           
           {isCashOnly && (
-            <span className="bg-gradient-to-r from-green-500 to-green-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              💵 SOLO EFECTIVO
+            <span className="bg-emerald-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
+              Solo Efectivo
             </span>
           )}
 
           {vehicle.condition === 'certified' && (
-            <span className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
-              ✓ CERTIFICADO
+            <span className="bg-indigo-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
+              Certificado
             </span>
           )}
         </div>
-
-        {/* Favorite Button */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            // TODO: Agregar a favoritos
-          }}
-          className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition shadow-lg opacity-0 group-hover:opacity-100"
-        >
-          <Heart className="w-5 h-5 text-gray-700" />
-        </button>
       </div>
 
       {/* Content */}
       <div className="p-5">
         {/* Title */}
-        <h3 className="text-lg font-bold text-gray-900 mb-3 group-hover:text-blue-600 transition line-clamp-2">
+        <h3 className="text-lg font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition line-clamp-2">
           {title}
         </h3>
 
         {/* Specs Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-          <div className="flex items-center gap-2 text-gray-600">
-            <Calendar className="w-4 h-4 flex-shrink-0" />
-            <span>{vehicle.year}</span>
+        <div className="grid grid-cols-2 gap-3 mb-4 text-xs text-gray-600">
+          <div className="flex items-center gap-1.5">
+            <Calendar className="w-3.5 h-3.5 text-gray-400" />
+            <span className="font-medium">{vehicle.year}</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <Gauge className="w-4 h-4 flex-shrink-0" />
-            <span>{vehicle.mileage?.toLocaleString()} mi</span>
+          <div className="flex items-center gap-1.5">
+            <Gauge className="w-3.5 h-3.5 text-gray-400" />
+            <span className="font-medium">{vehicle.mileage?.toLocaleString()} mi</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <div className="flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
               <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
               <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
             </svg>
-            <span className="truncate">{vehicle.bodyClass || 'Sedan'}</span>
+            <span className="font-medium truncate">{vehicle.bodyClass || 'Sedan'}</span>
           </div>
-          <div className="flex items-center gap-2 text-gray-600">
-            <MapPin className="w-4 h-4 flex-shrink-0" />
-            <span>Salem, OR</span>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-gray-400" />
+            <span className="font-medium">Salem, OR</span>
           </div>
         </div>
 
-        {/* Features */}
-        {vehicle.features && vehicle.features.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-2">
-            {vehicle.features.slice(0, 3).map((feature, index) => (
-              <span 
-                key={index}
-                className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded"
-              >
-                {feature}
-              </span>
-            ))}
-            {vehicle.features.length > 3 && (
-              <span className="text-xs text-gray-500">
-                +{vehicle.features.length - 3} más
-              </span>
-            )}
-          </div>
-        )}
+        {/* Separator */}
+        <div className="border-t border-gray-100 my-4"></div>
 
-        {/* Información según tipo de financiamiento */}
+        {/* Pricing Information - Diseño Limpio */}
         {isInHouseFinancing ? (
-          // Vehículos con Financiamiento en Casa
+          // Financiamiento en Casa
           vehicle.showMonthlyPayment !== false && vehicle.monthlyPaymentFrom ? (
-            <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-3 mb-4">
-              <p className="text-xs text-orange-700 font-medium mb-1">Pago mensual desde</p>
-              <div className="flex items-baseline gap-1">
-                <p className="text-2xl font-bold text-orange-700">
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-2xl font-bold text-gray-900">
                   ${vehicle.monthlyPaymentFrom}
-                </p>
-                <p className="text-sm text-orange-600">/mes</p>
+                </span>
+                <span className="text-sm text-gray-500 font-medium">/mes</span>
               </div>
               {vehicle.showDownPayment !== false && vehicle.downPaymentFrom && (
-                <p className="text-xs text-orange-600 mt-1">
-                  Enganche desde ${vehicle.downPaymentFrom?.toLocaleString()}
+                <p className="text-xs text-gray-600">
+                  Enganche desde <span className="font-semibold text-gray-900">${vehicle.downPaymentFrom?.toLocaleString()}</span>
                 </p>
               )}
             </div>
-          ) : null
+          ) : (
+            <div className="mb-4 h-16"></div>
+          )
         ) : isCashOnly ? (
-          // Vehículos Solo Efectivo - Muestra precio si está habilitado
+          // Solo Efectivo
           vehicle.showPrice !== false && vehicle.price ? (
-            <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-3 mb-4 text-center">
-              <p className="text-xs text-green-700 font-medium mb-1">Precio</p>
-              <p className="text-3xl font-bold text-green-700">
-                ${vehicle.price?.toLocaleString()}
-              </p>
-              <p className="text-xs text-green-800 font-semibold mt-2">
-                PRECIO PROMOCIONAL
+            <div className="mb-4">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-2xl font-bold text-gray-900">
+                  ${vehicle.price?.toLocaleString()}
+                </span>
+              </div>
+              <p className="text-xs text-emerald-600 font-medium">
+                Pago al contado
               </p>
             </div>
-          ) : null
-        ) : null}
+          ) : (
+            <div className="mb-4 h-16"></div>
+          )
+        ) : (
+          <div className="mb-4 h-16"></div>
+        )}
 
         {/* CTA Button */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between text-sm">
           <span className="text-blue-600 font-semibold group-hover:text-blue-700 transition">
-            Ver Detalles
+            Ver detalles
           </span>
-          <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition" />
+          <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition" />
         </div>
       </div>
     </a>
