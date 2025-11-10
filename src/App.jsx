@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
+
+// Admin Components
 import Dashboard from './components/Dashboard';
 import ClientList from './components/ClientList';
 import PaymentHistory from './components/PaymentHistory';
@@ -9,8 +12,18 @@ import PaymentForm from './components/PaymentForm';
 import ClientDetailPage from './components/ClientDetailPage';
 import SettingsPage from './components/SettingsPage';
 import Login from './components/Login';
-import InventoryList from './components/inventory/InventoryList';  // 🆕 NUEVO
-import { Home, Users, DollarSign, Plus, LogOut, Settings, Car } from 'lucide-react';  // 🆕 Agregado Car
+import InventoryList from './components/inventory/InventoryList';
+import AdminLayout from './components/layouts/AdminLayout';
+
+// Public Components
+import PublicLayout from './components/layouts/PublicLayout';
+import HomePage from './pages/public/HomePage';
+import InventoryPage from './pages/public/InventoryPage';
+import VehicleDetailPage from './pages/public/VehicleDetailPage';
+import FinancingPage from './pages/public/FinancingPage';
+import ContactPage from './pages/public/ContactPage';
+
+import { Home, Users, DollarSign, Car } from 'lucide-react';
 
 import { db } from './config/firebase';
 import { 
@@ -26,7 +39,26 @@ import {
 
 import { generateScheduledPayments, applyPaymentToScheduled, calculatePaymentStatus } from './utils/paymentScheduler';
 
-function AppContent() {
+// Protected Route Component
+function ProtectedRoute({ children }) {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/admin/login" replace />;
+  }
+  
+  return children;
+}
+
+function AdminApp() {
   const { user, logout } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
   const [clients, setClients] = useState([]);
@@ -82,8 +114,6 @@ function AppContent() {
   const handleSaveClient = async (clientData) => {
     try {
       if (editingClient) {
-        // 🔧 FIX: Al editar, regenerar scheduledPayments si cambiaron valores importantes
-        // O si cambió el modo de pagos (estándar <-> personalizado)
         const shouldRegenerateSchedule = 
           editingClient.downPayment !== clientData.downPayment ||
           editingClient.downPaymentPaid !== clientData.downPaymentPaid ||
@@ -91,9 +121,7 @@ function AppContent() {
           editingClient.platesPaid !== clientData.platesPaid ||
           editingClient.monthlyPayment !== clientData.monthlyPayment ||
           editingClient.numberOfPayments !== clientData.numberOfPayments ||
-          // 🆕 NUEVA CONDICIÓN: Detectar cambio en modo de pagos
           editingClient.useCustomSchedule !== clientData.useCustomSchedule ||
-          // 🆕 O si cambió el schedule personalizado
           (clientData.useCustomSchedule && 
            JSON.stringify(editingClient.customPaymentSchedule) !== JSON.stringify(clientData.customPaymentSchedule));
 
@@ -103,21 +131,16 @@ function AppContent() {
         };
 
         if (shouldRegenerateSchedule) {
-          // Regenerar los pagos programados con los nuevos valores
           const newScheduledPayments = generateScheduledPayments(clientData);
           
-          // 🔧 IMPORTANTE: Preservar pagos ya aplicados
-          // Si el cliente ya tenía scheduledPayments, intentar preservar los pagos aplicados
           if (editingClient.scheduledPayments && Array.isArray(editingClient.scheduledPayments)) {
             newScheduledPayments.forEach(newPayment => {
-              // Buscar si este pago ya existía
               const oldPayment = editingClient.scheduledPayments.find(
                 old => old.id === newPayment.id || 
                       (old.type === newPayment.type && old.paymentNumber === newPayment.paymentNumber)
               );
               
               if (oldPayment && oldPayment.paidAmount > 0) {
-                // Preservar el monto pagado
                 newPayment.paidAmount = oldPayment.paidAmount;
                 newPayment.remainingAmount = newPayment.amount - oldPayment.paidAmount;
                 newPayment.payments = oldPayment.payments || [];
@@ -171,7 +194,6 @@ function AppContent() {
   const handleSavePayment = async (paymentData) => {
     try {
       if (editingPayment) {
-        // EDITAR PAGO EXISTENTE
         const oldPayment = payments.find(p => p.id === editingPayment.id);
         const client = clients.find(c => c.id === selectedClient.id);
         
@@ -179,7 +201,6 @@ function AppContent() {
           updatedAt: new Date()
         };
 
-        // Revertir según tipo de pago
         if (oldPayment.paymentType === 'monthly') {
           updateData.remainingBalance = (client.remainingBalance || 0) + oldPayment.amount;
         } else if (oldPayment.paymentType === 'downpayment') {
@@ -190,7 +211,6 @@ function AppContent() {
           updateData.platesPending = (client.platesAmount || 0) - updateData.platesPaid;
         }
 
-        // Revertir del pago programado
         if (oldPayment.appliedToScheduledPayment && client.scheduledPayments) {
           const updatedScheduledPayments = client.scheduledPayments.map(sp => {
             if (sp.id === oldPayment.appliedToScheduledPayment) {
@@ -207,13 +227,11 @@ function AppContent() {
           updateData.scheduledPayments = updatedScheduledPayments;
         }
 
-        // Actualizar el documento de pago
         await updateDoc(doc(db, 'payments', editingPayment.id), {
           ...paymentData,
           updatedAt: new Date()
         });
 
-        // Aplicar el nuevo pago
         if (paymentData.paymentType === 'monthly') {
           updateData.remainingBalance = Math.max(0, updateData.remainingBalance - paymentData.amount);
           updateData.status = updateData.remainingBalance <= 0 ? 'paid' : client.status;
@@ -225,7 +243,6 @@ function AppContent() {
           updateData.platesPending = Math.max(0, (client.platesAmount || 0) - updateData.platesPaid);
         }
 
-        // Aplicar al pago programado
         if (paymentData.appliedToScheduledPayment && updateData.scheduledPayments) {
           const finalScheduledPayments = updateData.scheduledPayments.map(sp => {
             if (sp.id === paymentData.appliedToScheduledPayment) {
@@ -250,7 +267,6 @@ function AppContent() {
         await updateDoc(doc(db, 'clients', selectedClient.id), updateData);
         
       } else {
-        // CREAR NUEVO PAGO
         const paymentRef = await addDoc(collection(db, 'payments'), {
           ...paymentData,
           createdAt: new Date(),
@@ -329,7 +345,6 @@ function AppContent() {
         updateData.platesPending = (client.platesAmount || 0) - updateData.platesPaid;
       }
 
-      // Revertir del pago programado
       if (payment.appliedToScheduledPayment && client.scheduledPayments) {
         const updatedScheduledPayments = client.scheduledPayments.map(sp => {
           if (sp.id === payment.appliedToScheduledPayment) {
@@ -412,12 +427,8 @@ function AppContent() {
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'payments', label: 'Pagos', icon: DollarSign },
-    { id: 'inventory', label: 'Inventario', icon: Car }  // 🆕 NUEVO
+    { id: 'inventory', label: 'Inventario', icon: Car }
   ];
-
-  if (!user) {
-    return <Login />;
-  }
 
   if (loading) {
     return (
@@ -481,109 +492,38 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <nav className="bg-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <DollarSign className="w-8 h-8 text-blue-600" />
-              <span className="ml-2 text-xl font-bold text-gray-800">BHPH System</span>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="hidden md:flex items-center gap-2">
-                {navItems.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => setCurrentView(item.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
-                      currentView === item.id
-                        ? 'bg-blue-100 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span>{item.label}</span>
-                  </button>
-                ))}
-              </div>
-              
-              {currentView === 'clients' && (
-                <button
-                  onClick={() => {
-                    setEditingClient(null);
-                    setShowClientForm(true);
-                  }}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="hidden sm:inline">Nuevo Cliente</span>
-                </button>
-              )}
-              
-              <button
-                onClick={() => setShowSettings(true)}
-                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-                title="Configuración"
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
-              >
-                <LogOut className="w-5 h-5" />
-                <span className="hidden sm:inline">Salir</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <AdminLayout
+      currentView={currentView}
+      setCurrentView={setCurrentView}
+      navItems={navItems}
+      onNewClient={() => {
+        setEditingClient(null);
+        setShowClientForm(true);
+      }}
+      onSettings={() => setShowSettings(true)}
+      onLogout={logout}
+    >
+      {currentView === 'dashboard' && (
+        <Dashboard clients={clients} payments={payments} />
+      )}
+      
+      {currentView === 'clients' && (
+        <ClientList
+          clients={clients}
+          onEdit={handleEditClient}
+          onDelete={handleDeleteClient}
+          onViewDetail={handleViewDetail}
+        />
+      )}
+      
+      {currentView === 'payments' && (
+        <PaymentHistory payments={payments} clients={clients} />
+      )}
 
-      <div className="md:hidden bg-white border-t border-gray-200">
-        <div className="flex justify-around py-2">
-          {navItems.map(item => (
-            <button
-              key={item.id}
-              onClick={() => setCurrentView(item.id)}
-              className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition ${
-                currentView === item.id
-                  ? 'text-blue-600'
-                  : 'text-gray-600'
-              }`}
-            >
-              <item.icon className="w-6 h-6" />
-              <span className="text-xs">{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {currentView === 'dashboard' && (
-          <Dashboard clients={clients} payments={payments} />
-        )}
-        
-        {currentView === 'clients' && (
-          <ClientList
-            clients={clients}
-            onEdit={handleEditClient}
-            onDelete={handleDeleteClient}
-            onViewDetail={handleViewDetail}
-          />
-        )}
-        
-        {currentView === 'payments' && (
-          <PaymentHistory payments={payments} clients={clients} />
-        )}
-
-        {/* 🆕 NUEVO - Vista de Inventario */}
-        {currentView === 'inventory' && (
-          <InventoryList />
-        )}
-      </main>
-    </div>
+      {currentView === 'inventory' && (
+        <InventoryList />
+      )}
+    </AdminLayout>
   );
 }
 
@@ -591,7 +531,32 @@ export default function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
-        <AppContent />
+        <BrowserRouter>
+          <Routes>
+            {/* Rutas Públicas */}
+            <Route path="/" element={<PublicLayout />}>
+              <Route index element={<HomePage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="vehicle/:id" element={<VehicleDetailPage />} />
+              <Route path="financing" element={<FinancingPage />} />
+              <Route path="contact" element={<ContactPage />} />
+            </Route>
+
+            {/* Rutas de Admin */}
+            <Route path="/admin/login" element={<Login />} />
+            <Route 
+              path="/admin/*" 
+              element={
+                <ProtectedRoute>
+                  <AdminApp />
+                </ProtectedRoute>
+              } 
+            />
+
+            {/* 404 */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </BrowserRouter>
       </SettingsProvider>
     </AuthProvider>
   );
