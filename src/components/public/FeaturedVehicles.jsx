@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight, MapPin, Gauge } from 'lucide-react';
-import { useFeaturedVehicles } from '../../../hooks/usePublicVehicles';
-import { formatVehicleTitle } from '../../../services/vinService';
+import { useFeaturedVehicles } from '../../hooks/usePublicVehicles';
+import { formatVehicleTitle } from '../../services/vinService';
 
 export default function FeaturedVehicles() {
   const { vehicles, loading } = useFeaturedVehicles(6);

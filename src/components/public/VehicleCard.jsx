@@ -1,5 +1,5 @@
 import { ArrowRight, Gauge, MapPin, Calendar, Heart } from 'lucide-react';
-import { formatVehicleTitle } from '../../../services/vinService';
+import { formatVehicleTitle } from "../../services/vinService";
 
 export default function VehicleCard({ vehicle, featured = false }) {
   const primaryImage = vehicle.images?.find(img => img.isPrimary) || vehicle.images?.[0];
