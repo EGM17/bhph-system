@@ -17,7 +17,7 @@ import AdminLayout from './components/layouts/AdminLayout';
 
 // Public Components
 import PublicLayout from './components/layouts/PublicLayout';
-import HomePage from './components/public/HomePage';
+import HomePage from './pages/public/HomePage';
 import InventoryPage from './pages/public/InventoryPage';
 import VehicleDetailPage from './pages/public/VehicleDetailPage';
 import FinancingPage from './pages/public/FinancingPage';

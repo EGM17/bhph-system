@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { DollarSign } from 'lucide-react';
 
 export default function Login() {
@@ -7,7 +8,15 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { user, login } = useAuth();
+  const navigate = useNavigate();
+
+  // 🆕 Redirigir si ya está autenticado
+  useEffect(() => {
+    if (user) {
+      navigate('/admin');
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,6 +25,7 @@ export default function Login() {
     
     try {
       await login(email, password);
+      // La redirección se manejará automáticamente por el useEffect
     } catch (err) {
       setError('Error al iniciar sesión. Verifica tus credenciales.');
       console.error(err);
