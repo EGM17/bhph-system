@@ -1,5 +1,10 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db } from '../config/firebase';
+import { getStorage } from 'firebase/storage';
 
+const storage = getStorage();
 const SettingsContext = createContext();
 
 export const useSettings = () => {
@@ -9,21 +14,101 @@ export const useSettings = () => {
 };
 
 export const SettingsProvider = ({ children }) => {
-  const [settings, setSettings] = useState(() => {
-    const saved = localStorage.getItem('bhph_settings');
-    return saved ? JSON.parse(saved) : {
-      dateFormat: 'en-US',
-      currency: 'USD',
-      theme: 'light'
-    };
+  const [settings, setSettings] = useState({
+    dateFormat: 'en-US',
+    currency: 'USD',
+    theme: 'light',
+    // Configuración del Hero
+    heroImage: null, // URL de la imagen
+    heroImageAlt: 'Tu Próximo Auto Te Espera',
+    heroTitle: 'LATINO AL VOLANTE',
+    heroSubtitle: 'Empieza hoy mismo el proceso y maneja tu auto en menos de 24 horas'
   });
+  
+  const [loading, setLoading] = useState(true);
 
+  // Cargar configuración desde Firebase al iniciar
   useEffect(() => {
-    localStorage.setItem('bhph_settings', JSON.stringify(settings));
-  }, [settings]);
+    loadSettings();
+  }, []);
 
-  const updateSettings = (newSettings) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
+  const loadSettings = async () => {
+    try {
+      const settingsDoc = await getDoc(doc(db, 'settings', 'general'));
+      if (settingsDoc.exists()) {
+        setSettings(prev => ({ ...prev, ...settingsDoc.data() }));
+      }
+    } catch (error) {
+      console.error('Error cargando configuración:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateSettings = async (newSettings) => {
+    try {
+      const updatedSettings = { ...settings, ...newSettings };
+      setSettings(updatedSettings);
+      
+      // Guardar en Firebase
+      await setDoc(doc(db, 'settings', 'general'), updatedSettings, { merge: true });
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Error actualizando configuración:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  /**
+   * Sube la imagen del Hero a Firebase Storage
+   * @param {File} file - Archivo de imagen
+   * @returns {Promise<string>} URL de la imagen subida
+   */
+  const uploadHeroImage = async (file) => {
+    try {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        throw new Error('El archivo debe ser una imagen');
+      }
+
+      // Validar tamaño (max 5MB)
+      const maxSize = 5 * 1024 * 1024; // 5MB
+      if (file.size > maxSize) {
+        throw new Error('La imagen no debe superar 5MB');
+      }
+
+      // Generar nombre único
+      const timestamp = Date.now();
+      const extension = file.name.split('.').pop();
+      const filename = `hero-image-${timestamp}.${extension}`;
+      
+      // Referencia en Storage
+      const storageRef = ref(storage, `settings/hero/${filename}`);
+      
+      // Metadata
+      const metadata = {
+        contentType: file.type,
+        customMetadata: {
+          uploadedAt: new Date().toISOString(),
+          originalName: file.name
+        }
+      };
+
+      // Subir archivo
+      await uploadBytes(storageRef, file, metadata);
+      
+      // Obtener URL de descarga
+      const downloadURL = await getDownloadURL(storageRef);
+      
+      // Actualizar settings con la nueva URL
+      await updateSettings({ heroImage: downloadURL });
+      
+      return { success: true, url: downloadURL };
+    } catch (error) {
+      console.error('Error subiendo imagen:', error);
+      return { success: false, error: error.message };
+    }
   };
 
   /**
@@ -105,9 +190,11 @@ export const SettingsProvider = ({ children }) => {
   const value = {
     settings,
     updateSettings,
+    uploadHeroImage,
     formatDate,
     toInputDate,
-    formatCurrency
+    formatCurrency,
+    loading
   };
 
   return (

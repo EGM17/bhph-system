@@ -1,6 +1,9 @@
-import { ArrowRight, CheckCircle, DollarSign, Shield } from 'lucide-react';
+import { ArrowRight, CheckCircle, DollarSign } from 'lucide-react';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function Hero() {
+  const { settings } = useSettings();
+
   return (
     <div className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-blue-900 text-white overflow-hidden">
       {/* Background Pattern */}
@@ -10,7 +13,7 @@ export default function Hero() {
         }} />
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* Left Content */}
@@ -31,10 +34,10 @@ export default function Hero() {
               </p>
             </div>
 
-            {/* Features */}
+            {/* Features - Reducido a solo 2 características principales */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex items-start gap-3">
-                <div className="bg-green-500 rounded-full p-2">
+                <div className="bg-green-500 rounded-full p-2 flex-shrink-0">
                   <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
@@ -44,28 +47,8 @@ export default function Hero() {
               </div>
 
               <div className="flex items-start gap-3">
-                <div className="bg-yellow-500 rounded-full p-2">
+                <div className="bg-yellow-500 rounded-full p-2 flex-shrink-0">
                   <DollarSign className="w-5 h-5 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Enganches míninos</h3>
-                  <p className="text-sm text-blue-100">Solo pagas un enganche mínimo</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-blue-400 rounded-full p-2">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Garantía Incluida</h3>
-                  <p className="text-sm text-blue-100">Protección en cada auto</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-purple-500 rounded-full p-2">
-                  <CheckCircle className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-semibold mb-1">Sin checar crédito</h3>
@@ -92,8 +75,8 @@ export default function Hero() {
               </a>
             </div>
 
-            {/* Trust Badges */}
-            <div className="flex items-center gap-6 pt-4 border-t border-white/20">
+            {/* Trust Badges - Mejorados para estar siempre visibles */}
+            <div className="flex items-center gap-6 pt-4 border-t border-white/20 relative z-20">
               <div className="text-center">
                 <p className="text-3xl font-bold">500+</p>
                 <p className="text-sm text-blue-200">Clientes Felices</p>
@@ -105,60 +88,85 @@ export default function Hero() {
               </div>
               <div className="w-px h-12 bg-white/20"></div>
               <div className="text-center">
-                <p className="text-3xl font-bold">4.9★</p>
+                <div className="flex items-center gap-1 justify-center">
+                  <span className="text-3xl font-bold">4.9</span>
+                  <span className="text-yellow-400 text-2xl">★</span>
+                </div>
                 <p className="text-sm text-blue-200">Rating en Google</p>
               </div>
             </div>
           </div>
 
-          {/* Right Content - Image */}
-          <div className="relative lg:block hidden">
-            <div className="relative">
-              {/* Floating Card */}
-              <div className="absolute -top-8 -right-8 bg-white text-gray-900 p-6 rounded-2xl shadow-2xl max-w-xs">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-lg">¡Aprobado!</p>
-                    <p className="text-sm text-gray-600">En 5 minutos</p>
+          {/* Right Content - Card con imagen personalizable */}
+          <div className="relative lg:pl-12">
+            <div className="relative z-10 bg-gradient-to-br from-blue-500/40 to-blue-600/40 backdrop-blur-md rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
+              
+              {/* Imagen personalizable o placeholder */}
+              {settings.heroImage ? (
+                <div className="relative">
+                  <img 
+                    src={settings.heroImage} 
+                    alt={settings.heroImageAlt || 'Tu Próximo Auto Te Espera'}
+                    className="w-full h-64 object-cover"
+                  />
+                  {/* Overlay con gradiente para asegurar legibilidad del texto */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-blue-900/50 to-transparent"></div>
+                  
+                  {/* Texto sobre la imagen */}
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
+                    <h3 className="text-2xl font-bold mb-2">
+                      {settings.heroTitle || 'LATINO AL VOLANTE'}
+                    </h3>
+                    <p className="text-blue-100 text-sm">
+                      {settings.heroSubtitle || 'Empieza hoy mismo el proceso y maneja tu auto en menos de 24 horas'}
+                    </p>
                   </div>
                 </div>
-                <div className="border-t pt-3">
-                  <p className="text-sm text-gray-600">Pago mensual desde:</p>
-                  <p className="text-3xl font-bold text-blue-600">$299</p>
+              ) : (
+                // Diseño por defecto si no hay imagen configurada
+                <div className="p-8">
+                  <div className="flex items-center justify-center w-24 h-24 bg-blue-400/50 rounded-full mx-auto mb-6">
+                    <svg 
+                      className="w-12 h-12 text-white" 
+                      fill="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M18 18.5a1.5 1.5 0 0 1-1 1.5 1.5 1.5 0 0 1-1.5-1.5 1.5 1.5 0 0 1 1.5-1.5 1.5 1.5 0 0 1 1 1.5m1.5-9-1.76-4.53A1 1 0 0 0 16.81 4H7.19a1 1 0 0 0-.93.47L4.5 9H2v4h1v6c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-6h1V9h-2.5M7.88 5.5h8.25l1.5 3.5h-11.25l1.5-3.5M6 18.5a1.5 1.5 0 0 1-1 1.5A1.5 1.5 0 0 1 3.5 18.5 1.5 1.5 0 0 1 5 17a1.5 1.5 0 0 1 1 1.5z"/>
+                    </svg>
+                  </div>
+                  
+                  <h3 className="text-2xl font-bold text-center mb-4">
+                    {settings.heroTitle || 'Tu Próximo Auto Te Espera'}
+                  </h3>
+                  
+                  <p className="text-blue-100 text-center mb-6">
+                    {settings.heroSubtitle || 'Empieza hoy mismo el proceso y maneja tu auto en menos de 24 horas'}
+                  </p>
+                </div>
+              )}
+              
+              {/* Lista de beneficios - siempre visible */}
+              <div className="p-6 space-y-3">
+                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-sm">Sin revisión de crédito</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-sm">Proceso 100% en español</span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
+                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
+                  <span className="text-sm">Entrega inmediata</span>
                 </div>
               </div>
-
-              {/* Main Image Placeholder */}
-              <div className="relative z-10 bg-white/10 backdrop-blur-sm rounded-3xl p-8 border-4 border-white/30">
-                <div className="aspect-[4/3] bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-32 h-32 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
-                        <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1v-5a1 1 0 00-.293-.707l-2-2A1 1 0 0015 7h-1z" />
-                      </svg>
-                    </div>
-                    <p className="text-white font-semibold text-lg">Tu Próximo Auto Te Espera</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Decorative Elements */}
-              <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-yellow-400 rounded-full opacity-20 blur-3xl"></div>
-              <div className="absolute -top-6 left-1/2 w-32 h-32 bg-purple-400 rounded-full opacity-20 blur-3xl"></div>
             </div>
+            
+            {/* Decorative elements */}
+            <div className="absolute -top-6 -right-6 w-24 h-24 bg-yellow-400/20 rounded-full blur-2xl -z-10"></div>
+            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl -z-10"></div>
           </div>
         </div>
-      </div>
-
-      {/* Wave Bottom */}
-      <div className="absolute bottom-0 left-0 right-0">
-        <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="white"/>
-        </svg>
       </div>
     </div>
   );
