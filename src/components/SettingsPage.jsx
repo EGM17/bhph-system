@@ -54,10 +54,6 @@ export default function SettingsPage({ onClose }) {
     }
   };
 
-  const handleTextUpdate = async (field, value) => {
-    await updateSettings({ [field]: value });
-  };
-
   return (
     <div className="min-h-screen bg-gray-100">
       <div className="bg-white shadow">
@@ -80,7 +76,7 @@ export default function SettingsPage({ onClose }) {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           
-          {/* Configuración del Hero */}
+          {/* Configuración del Hero - IMAGEN COMPLETA */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3 mb-4">
               <ImageIcon className="w-6 h-6 text-blue-600" />
@@ -88,7 +84,8 @@ export default function SettingsPage({ onClose }) {
             </div>
             
             <p className="text-sm text-gray-600 mb-6">
-              Personaliza la imagen y textos que aparecen en el recuadro principal de la página de inicio
+              La imagen que aparecerá en el recuadro principal de la página de inicio. 
+              Se mostrará completa sin texto superpuesto.
             </p>
 
             {/* Preview de la imagen actual */}
@@ -96,20 +93,24 @@ export default function SettingsPage({ onClose }) {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Vista previa
               </label>
-              <div className="relative bg-gradient-to-br from-blue-500/40 to-blue-600/40 rounded-xl p-8 border-2 border-dashed border-blue-300">
+              <div className="relative bg-gray-50 rounded-xl p-4 border-2 border-dashed border-gray-300">
                 {previewUrl ? (
-                  <div className="relative">
+                  <div className="relative rounded-lg overflow-hidden">
                     <img 
                       src={previewUrl} 
                       alt="Preview" 
-                      className="w-full h-64 object-cover rounded-lg"
+                      className="w-full object-cover rounded-lg"
+                      style={{
+                        maxHeight: '400px',
+                        minHeight: '300px'
+                      }}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent rounded-lg"></div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-64 text-blue-600">
-                    <ImageIcon className="w-16 h-16 mb-4 opacity-50" />
+                  <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                    <ImageIcon className="w-16 h-16 mb-4" />
                     <p className="text-sm">No hay imagen configurada</p>
+                    <p className="text-xs mt-2">La imagen se mostrará completa en la página principal</p>
                   </div>
                 )}
               </div>
@@ -129,15 +130,18 @@ export default function SettingsPage({ onClose }) {
                     disabled={uploading}
                     className="hidden"
                   />
-                  <div className={`border-2 border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition ${
+                  <div className={`border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition ${
                     uploading ? 'opacity-50 cursor-not-allowed' : ''
                   }`}>
-                    <Upload className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm text-gray-600">
-                      {uploading ? 'Subiendo...' : 'Click para seleccionar imagen'}
+                    <Upload className="w-10 h-10 mx-auto mb-3 text-gray-400" />
+                    <p className="text-sm font-medium text-gray-700 mb-1">
+                      {uploading ? 'Subiendo imagen...' : 'Click para seleccionar imagen'}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Formatos: JPG, PNG, WebP (máx. 5MB)
+                    <p className="text-xs text-gray-500">
+                      Formatos recomendados: JPG, PNG, WebP (máx. 5MB)
+                    </p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Tamaño recomendado: 800x600px o mayor
                     </p>
                   </div>
                 </label>
@@ -153,138 +157,69 @@ export default function SettingsPage({ onClose }) {
 
               {uploadError && (
                 <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-sm text-red-800">{uploadError}</p>
+                  <p className="text-sm text-red-800">⚠️ {uploadError}</p>
                 </div>
               )}
 
               {uploadSuccess && (
                 <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-3">
-                  <p className="text-sm text-green-800">✓ Imagen actualizada correctamente</p>
+                  <p className="text-sm text-green-800">✅ Imagen actualizada correctamente</p>
                 </div>
               )}
             </div>
 
-            {/* Textos personalizables */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Título del recuadro
-                </label>
-                <input
-                  type="text"
-                  value={settings.heroTitle || ''}
-                  onChange={(e) => handleTextUpdate('heroTitle', e.target.value)}
-                  placeholder="Ej: LATINO AL VOLANTE"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Subtítulo del recuadro
-                </label>
-                <textarea
-                  value={settings.heroSubtitle || ''}
-                  onChange={(e) => handleTextUpdate('heroSubtitle', e.target.value)}
-                  placeholder="Ej: Empieza hoy mismo el proceso y maneja tu auto en menos de 24 horas"
-                  rows="3"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+            {/* Nota informativa */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-800">
+                <strong>💡 Nota:</strong> La imagen se mostrará completa en el recuadro de la página principal, 
+                ocupando todo el espacio disponible sin texto superpuesto. Recomendamos usar imágenes de 
+                alta calidad con el vehículo como protagonista.
+              </p>
             </div>
           </div>
 
-          {/* Formato de Fecha */}
+          {/* Configuración de formato de fecha */}
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center gap-3 mb-4">
               <Calendar className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-semibold text-gray-800">Formato de Fecha</h2>
+              <h2 className="text-xl font-semibold text-gray-800">Formato de fecha</h2>
             </div>
             
             <p className="text-sm text-gray-600 mb-4">
-              Selecciona cómo quieres ver las fechas en el sistema
+              Selecciona cómo se mostrarán las fechas en el sistema
             </p>
 
             <div className="space-y-3">
-              <button
-                onClick={() => handleDateFormatChange('en-US')}
-                className={`w-full text-left px-4 py-4 rounded-lg border-2 transition ${
-                  settings.dateFormat === 'en-US'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-800">Formato USA</p>
-                    <p className="text-sm text-gray-600">MM/DD/YYYY</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Ejemplo: {new Date().toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: '2-digit', 
-                        day: '2-digit' 
-                      })}
-                    </p>
-                  </div>
-                  {settings.dateFormat === 'en-US' && (
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">✓</span>
-                    </div>
-                  )}
+              <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="dateFormat"
+                  value="en-US"
+                  checked={settings.dateFormat === 'en-US'}
+                  onChange={() => handleDateFormatChange('en-US')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <div>
+                  <p className="font-medium">MM/DD/AAAA</p>
+                  <p className="text-sm text-gray-500">Formato estadounidense (12/31/2024)</p>
                 </div>
-              </button>
+              </label>
 
-              <button
-                onClick={() => handleDateFormatChange('es-ES')}
-                className={`w-full text-left px-4 py-4 rounded-lg border-2 transition ${
-                  settings.dateFormat === 'es-ES'
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-gray-800">Formato Español</p>
-                    <p className="text-sm text-gray-600">DD de MMMM de YYYY</p>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Ejemplo: {new Date().toLocaleDateString('es-ES', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </p>
-                  </div>
-                  {settings.dateFormat === 'es-ES' && (
-                    <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm">✓</span>
-                    </div>
-                  )}
+              <label className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="dateFormat"
+                  value="es-MX"
+                  checked={settings.dateFormat === 'es-MX'}
+                  onChange={() => handleDateFormatChange('es-MX')}
+                  className="w-4 h-4 text-blue-600"
+                />
+                <div>
+                  <p className="font-medium">DD/MM/AAAA</p>
+                  <p className="text-sm text-gray-500">Formato latinoamericano (31/12/2024)</p>
                 </div>
-              </button>
+              </label>
             </div>
-          </div>
-
-          {/* Información del Sistema */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Información del Sistema</h2>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Versión</span>
-                <span className="font-medium text-gray-800">1.1.0</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-gray-200">
-                <span className="text-gray-600">Última actualización</span>
-                <span className="font-medium text-gray-800">Noviembre 2024</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Botón Guardar */}
-          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
-            <p className="text-sm text-green-800 flex items-center gap-2">
-              <span className="text-lg">✓</span>
-              Los cambios se guardan automáticamente
-            </p>
           </div>
         </div>
       </div>

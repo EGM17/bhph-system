@@ -16,67 +16,55 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
-          {/* Left Content */}
+          {/* Left Content - EXACTAMENTE COMO ESTABA ANTES */}
           <div className="space-y-8">
             <div>
               <span className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-6">
-                Autos con financiamiento en casa en Salem, Oregon.
+                Autos seminuevos en Salem, Oregon.
               </span>
               <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-                Financiamiento con
+                Financiamiento
                 <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-400">
-                0% de interés.
+                sin intereses
                 </span>
               </h1>
               <p className="text-xl text-blue-100 leading-relaxed">
-                Ofrecemos financiamiento fácil y rápido para todos. Sin importar tu crédito, sin ITIN, 
+                Ofrecemos financiamiento fácil y rápido en vehículos seminuevos. Sin revisar crédito, sin ITIN, 
                 sin SSN, sin licencia y sin intereses.
               </p>
             </div>
 
-            {/* Features - Reducido a solo 2 características principales */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex items-start gap-3">
-                <div className="bg-green-500 rounded-full p-2 flex-shrink-0">
-                  <CheckCircle className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Aprobación inmediata</h3>
-                  <p className="text-sm text-blue-100">Solo con tres requisitos</p>
-                </div>
+            {/* Features */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-6 h-6 text-green-400" />
+                <span className="font-medium">Sin revisar tú crédito</span>
               </div>
-
-              <div className="flex items-start gap-3">
-                <div className="bg-yellow-500 rounded-full p-2 flex-shrink-0">
-                  <DollarSign className="w-5 h-5 text-gray-900" />
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-1">Sin checar crédito</h3>
-                  <p className="text-sm text-blue-100">Todos son bienvenidos</p>
-                </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-6 h-6 text-green-400" />
+                <span className="font-medium">Solo con tres requisitos</span>
               </div>
             </div>
 
-            {/* CTA Buttons */}
+            {/* CTAs */}
             <div className="flex flex-col sm:flex-row gap-4">
               <a
                 href="/inventory"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 rounded-xl hover:bg-blue-50 transition font-bold text-lg shadow-2xl hover:shadow-3xl group"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-lg hover:bg-gray-100 transition font-semibold"
               >
                 Ver inventario
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
+                <ArrowRight className="w-5 h-5" />
               </a>
-
               <a
-                href="/financing"
-                className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white/10 transition font-bold text-lg backdrop-blur-sm"
+                href="/apply"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition font-semibold"
               >
                 Aplicar para financiamiento
               </a>
             </div>
 
-            {/* Trust Badges - Mejorados para estar siempre visibles */}
-            <div className="flex items-center gap-6 pt-4 border-t border-white/20 relative z-20">
+            {/* Stats */}
+            <div className="flex gap-6">
               <div className="text-center">
                 <p className="text-3xl font-bold">500+</p>
                 <p className="text-sm text-blue-200">Clientes Felices</p>
@@ -97,72 +85,38 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right Content - Card con imagen personalizable */}
+          {/* Right Content - SOLO IMAGEN, SIN TEXTO NI PLACEHOLDER */}
           <div className="relative lg:pl-12">
-            <div className="relative z-10 bg-gradient-to-br from-blue-500/40 to-blue-600/40 backdrop-blur-md rounded-3xl overflow-hidden border border-white/20 shadow-2xl">
-              
-              {/* Imagen personalizable o placeholder */}
-              {settings.heroImage ? (
-                <div className="relative">
-                  <img 
-                    src={settings.heroImage} 
-                    alt={settings.heroImageAlt || 'Tu Próximo Auto Te Espera'}
-                    className="w-full h-64 object-cover"
-                  />
-                  {/* Overlay con gradiente para asegurar legibilidad del texto */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-blue-900/90 via-blue-900/50 to-transparent"></div>
-                  
-                  {/* Texto sobre la imagen */}
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-center">
-                    <h3 className="text-2xl font-bold mb-2">
-                      {settings.heroTitle || 'LATINO AL VOLANTE'}
-                    </h3>
-                    <p className="text-blue-100 text-sm">
-                      {settings.heroSubtitle || 'Empieza hoy mismo el proceso y maneja tu auto en menos de 24 horas'}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                // Diseño por defecto si no hay imagen configurada
-                <div className="p-8">
-                  <div className="flex items-center justify-center w-24 h-24 bg-blue-400/50 rounded-full mx-auto mb-6">
-                    <svg 
-                      className="w-12 h-12 text-white" 
-                      fill="currentColor" 
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M18 18.5a1.5 1.5 0 0 1-1 1.5 1.5 1.5 0 0 1-1.5-1.5 1.5 1.5 0 0 1 1.5-1.5 1.5 1.5 0 0 1 1 1.5m1.5-9-1.76-4.53A1 1 0 0 0 16.81 4H7.19a1 1 0 0 0-.93.47L4.5 9H2v4h1v6c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-6h1V9h-2.5M7.88 5.5h8.25l1.5 3.5h-11.25l1.5-3.5M6 18.5a1.5 1.5 0 0 1-1 1.5A1.5 1.5 0 0 1 3.5 18.5 1.5 1.5 0 0 1 5 17a1.5 1.5 0 0 1 1 1.5z"/>
-                    </svg>
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-center mb-4">
-                    {settings.heroTitle || 'Tu Próximo Auto Te Espera'}
-                  </h3>
-                  
-                  <p className="text-blue-100 text-center mb-6">
-                    {settings.heroSubtitle || 'Empieza hoy mismo el proceso y maneja tu auto en menos de 24 horas'}
-                  </p>
+            {/* Contenedor de imagen que ocupa todo el espacio */}
+            <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl"
+                 style={{ 
+                   minHeight: '500px',
+                   maxHeight: '600px',
+                   backgroundColor: settings.heroImage ? 'transparent' : 'rgba(59, 130, 246, 0.15)' 
+                 }}>
+              {settings.heroImage && (
+                /* IMAGEN COMPLETA SIN TEXTO SUPERPUESTO NI PLACEHOLDER */
+                <img 
+                  src={settings.heroImage} 
+                  alt={settings.heroImageAlt || 'Auto destacado'}
+                  className="w-full h-full object-cover"
+                  style={{ 
+                    minHeight: '500px',
+                    maxHeight: '600px'
+                  }}
+                  loading="eager" // Carga inmediata para evitar el flash
+                />
+              )}
+              {/* Si no hay imagen, solo mostrar un fondo vacío sin texto ni iconos */}
+              {!settings.heroImage && (
+                <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-blue-600/20 backdrop-blur-sm"
+                     style={{ minHeight: '500px' }}>
+                  {/* Espacio vacío sin contenido */}
                 </div>
               )}
-              
-              {/* Lista de beneficios - siempre visible */}
-              <div className="p-6 space-y-3">
-                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span className="text-sm">Sin revisión de crédito</span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span className="text-sm">Proceso 100% en español</span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 rounded-lg p-3">
-                  <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0" />
-                  <span className="text-sm">Entrega inmediata</span>
-                </div>
-              </div>
             </div>
             
-            {/* Decorative elements */}
+            {/* Elementos decorativos */}
             <div className="absolute -top-6 -right-6 w-24 h-24 bg-yellow-400/20 rounded-full blur-2xl -z-10"></div>
             <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl -z-10"></div>
           </div>
