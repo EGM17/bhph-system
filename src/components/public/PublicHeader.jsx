@@ -48,8 +48,8 @@ export default function PublicHeader() {
               <Car className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                EL COMPA GÜERO
+              <h1 className="text-xl font-bold text-gray-900 leading-tight notranslate">
+                EL COMPA GUERO
               </h1>
               <p className="text-xs text-blue-600 font-medium">AUTO SALES</p>
             </div>

@@ -5,9 +5,191 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>BHPH System - Buy Here Pay Here</title>
+    
+    <style>
+      /* OCULTAR BARRA DE GOOGLE - SOLUCIÓN DEFINITIVA */
+      body {
+        top: 0 !important;
+        position: static !important;
+      }
+      
+      /* Ocultar todos los elementos de la barra */
+      .goog-te-banner-frame,
+      .goog-te-banner-frame.skiptranslate,
+      #goog-gt-tt,
+      .goog-te-balloon-frame,
+      div#goog-gt-,
+      .goog-te-balloon-frame iframe {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        position: absolute !important;
+        top: -9999px !important;
+        left: -9999px !important;
+        z-index: -9999 !important;
+      }
+      
+      /* Asegurar que body no tenga margin-top */
+      body > .skiptranslate {
+        display: none !important;
+      }
+      
+      /* Contenedor flotante */
+      #language-selector-wrapper {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 9999;
+      }
+      
+      /* Botón bonito */
+      #language-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        padding: 14px 24px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 8px 24px rgba(37, 99, 235, 0.4);
+        transition: all 0.3s ease;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+      
+      #language-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(37, 99, 235, 0.6);
+      }
+      
+      #language-btn:active {
+        transform: translateY(-1px);
+      }
+      
+      .globe-icon {
+        width: 20px;
+        height: 20px;
+        fill: white;
+      }
+      
+      #google_translate_element {
+        display: none !important;
+      }
+      
+      @media (max-width: 768px) {
+        #language-selector-wrapper {
+          bottom: 20px;
+          right: 20px;
+        }
+        
+        #language-btn {
+          padding: 12px 20px;
+          font-size: 13px;
+        }
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    
+    <div id="google_translate_element"></div>
+    
+    <div id="language-selector-wrapper">
+      <button id="language-btn" onclick="toggleLanguage()">
+        <svg class="globe-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+        <span id="lang-text">English</span>
+      </button>
+    </div>
+    
+    <script type="text/javascript">
+      function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+          pageLanguage: 'es',
+          includedLanguages: 'en,es',
+          autoDisplay: false
+        }, 'google_translate_element');
+      }
+      
+      function toggleLanguage() {
+        const langText = document.getElementById('lang-text');
+        const currentLang = getCookie('googtrans') || '';
+        
+        if (currentLang.includes('/en')) {
+          // Cambiar a español (borrar cookie)
+          document.cookie = 'googtrans=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          document.cookie = 'googtrans=; path=/; domain=' + window.location.hostname + '; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          langText.textContent = 'English';
+          window.location.reload();
+        } else {
+          // Cambiar a inglés
+          document.cookie = 'googtrans=/es/en; path=/';
+          document.cookie = 'googtrans=/es/en; path=/; domain=' + window.location.hostname;
+          langText.textContent = 'Español';
+          window.location.reload();
+        }
+      }
+      
+      function getCookie(name) {
+        const cookies = document.cookie.split(';');
+        for (let cookie of cookies) {
+          const [key, value] = cookie.trim().split('=');
+          if (key === name) return value;
+        }
+        return '';
+      }
+      
+      // Actualizar texto del botón según idioma actual
+      window.addEventListener('load', function() {
+        const currentLang = getCookie('googtrans');
+        const langText = document.getElementById('lang-text');
+        
+        if (currentLang && currentLang.includes('/en')) {
+          langText.textContent = 'Español';
+        } else {
+          langText.textContent = 'English';
+        }
+        
+        // Forzar remoción de barra cada 50ms durante 5 segundos
+        let counter = 0;
+        const maxAttempts = 100; // 5 segundos
+        
+        const removeBanner = setInterval(function() {
+          // Remover todos los iframes de Google Translate
+          const iframes = document.querySelectorAll('iframe[class*="goog-te"], iframe[id*="goog"]');
+          iframes.forEach(iframe => {
+            if (iframe.parentNode) {
+              iframe.parentNode.removeChild(iframe);
+            }
+          });
+          
+          // Remover divs de la barra
+          const banners = document.querySelectorAll('.goog-te-banner-frame, div[id*="goog-gt"], .skiptranslate[style*="position"]');
+          banners.forEach(banner => {
+            if (banner.parentNode && banner.className !== 'skiptranslate' && !banner.querySelector('select')) {
+              banner.parentNode.removeChild(banner);
+            }
+          });
+          
+          // Asegurar que body no tenga top
+          document.body.style.top = '0';
+          document.body.style.position = 'static';
+          
+          counter++;
+          if (counter >= maxAttempts) {
+            clearInterval(removeBanner);
+          }
+        }, 50);
+      });
+    </script>
+    
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </body>
 </html>
