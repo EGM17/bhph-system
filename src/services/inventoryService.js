@@ -27,6 +27,7 @@ export const createVehicle = async (vehicleData) => {
       ...vehicleData,
       status: vehicleData.status || 'available',
       isPublished: vehicleData.isPublished || false,
+      isFeatured: vehicleData.isFeatured || false, // ✅ Asegurar que siempre exista
       viewCount: 0,
       leadCount: 0,
       createdAt: new Date(),
@@ -243,7 +244,8 @@ export const getPublicVehicles = async (filters = {}) => {
 };
 
 /**
- * Obtiene vehículos destacados para homepage
+ * 🐛 FIX BUG #1: Obtiene vehículos destacados para homepage
+ * Ahora solo retorna vehículos que REALMENTE tienen isFeatured === true
  * @param {number} count - Número de vehículos a retornar
  * @returns {Promise<Array>} Vehículos destacados
  */
@@ -259,14 +261,19 @@ export const getFeaturedVehicles = async (count = 6) => {
     );
     
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const featuredVehicles = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+    
+    // ✅ FIX: Solo retornar si realmente hay vehículos destacados
+    // NO retornar vehículos recientes si no hay destacados
+    // El componente FeaturedVehicles manejará el caso de array vacío
+    return featuredVehicles;
   } catch (error) {
-    // Si no hay vehículos con isFeatured, retornar los más recientes
-    console.log('No featured vehicles, returning recent ones');
-    return getPublicVehicles({ limit: count });
+    console.error('Error obteniendo vehículos destacados:', error);
+    // Retornar array vacío en caso de error
+    return [];
   }
 };
 
@@ -296,16 +303,10 @@ export const incrementViewCount = async (vehicleId) => {
  */
 export const togglePublishStatus = async (vehicleId, isPublished) => {
   try {
-    const updates = {
+    await updateVehicle(vehicleId, { 
       isPublished,
-      updatedAt: new Date()
-    };
-    
-    if (isPublished) {
-      updates.publishedAt = new Date();
-    }
-    
-    await updateVehicle(vehicleId, updates);
+      publishedAt: isPublished ? new Date() : null
+    });
   } catch (error) {
     console.error('Error cambiando estado de publicación:', error);
     throw error;
@@ -313,7 +314,7 @@ export const togglePublishStatus = async (vehicleId, isPublished) => {
 };
 
 /**
- * Marca un vehículo como vendido y opcionalmente lo vincula a un cliente
+ * Marca un vehículo como vendido
  * @param {string} vehicleId - ID del vehículo
  * @param {string} clientId - ID del cliente (opcional)
  * @returns {Promise<void>}
@@ -322,9 +323,7 @@ export const markAsSold = async (vehicleId, clientId = null) => {
   try {
     const updates = {
       status: 'sold',
-      soldAt: new Date(),
-      isPublished: false,
-      updatedAt: new Date()
+      soldAt: new Date()
     };
     
     if (clientId) {
@@ -334,37 +333,6 @@ export const markAsSold = async (vehicleId, clientId = null) => {
     await updateVehicle(vehicleId, updates);
   } catch (error) {
     console.error('Error marcando vehículo como vendido:', error);
-    throw error;
-  }
-};
-
-/**
- * Busca vehículos por texto
- * @param {string} searchTerm - Término de búsqueda
- * @returns {Promise<Array>} Vehículos que coinciden
- */
-export const searchVehicles = async (searchTerm) => {
-  try {
-    // Obtener todos los vehículos publicados
-    const vehicles = await getPublicVehicles();
-    
-    // Filtrar por término de búsqueda (case insensitive)
-    const term = searchTerm.toLowerCase();
-    
-    return vehicles.filter(v => {
-      const searchableText = `
-        ${v.year} 
-        ${v.make} 
-        ${v.model} 
-        ${v.trim || ''} 
-        ${v.stockNumber || ''} 
-        ${v.vin || ''}
-      `.toLowerCase();
-      
-      return searchableText.includes(term);
-    });
-  } catch (error) {
-    console.error('Error buscando vehículos:', error);
     throw error;
   }
 };
@@ -398,6 +366,46 @@ export const getInventoryStats = async () => {
     return stats;
   } catch (error) {
     console.error('Error obteniendo estadísticas:', error);
+    return { 
+      total: 0, 
+      available: 0, 
+      sold: 0, 
+      pending: 0, 
+      published: 0, 
+      totalValue: 0,
+      avgPrice: 0,
+      totalViews: 0,
+      totalLeads: 0
+    };
+  }
+};
+
+/**
+ * Busca vehículos por término de búsqueda
+ * @param {string} searchTerm - Término a buscar
+ * @returns {Promise<Array>} Vehículos que coinciden
+ */
+export const searchVehicles = async (searchTerm) => {
+  try {
+    if (!searchTerm || searchTerm.trim().length < 2) {
+      return [];
+    }
+    
+    const vehicles = await getPublicVehicles();
+    const term = searchTerm.toLowerCase().trim();
+    
+    return vehicles.filter(vehicle => {
+      return (
+        vehicle.make?.toLowerCase().includes(term) ||
+        vehicle.model?.toLowerCase().includes(term) ||
+        vehicle.year?.toString().includes(term) ||
+        vehicle.vin?.toLowerCase().includes(term) ||
+        vehicle.trim?.toLowerCase().includes(term) ||
+        vehicle.bodyClass?.toLowerCase().includes(term)
+      );
+    });
+  } catch (error) {
+    console.error('Error buscando vehículos:', error);
     throw error;
   }
 };
@@ -410,8 +418,8 @@ export const getFilterOptions = async () => {
   try {
     const vehicles = await getPublicVehicles();
     
-    const makes = [...new Set(vehicles.map(v => v.make))].sort();
-    const years = [...new Set(vehicles.map(v => v.year))].sort((a, b) => b - a);
+    const makes = [...new Set(vehicles.map(v => v.make))].filter(Boolean).sort();
+    const years = [...new Set(vehicles.map(v => v.year))].filter(Boolean).sort((a, b) => b - a);
     const bodyTypes = [...new Set(vehicles.map(v => v.bodyType || v.bodyClass).filter(Boolean))].sort();
     
     // Rangos de precio

@@ -7,7 +7,7 @@ const storage = getStorage();
  * @param {File} file - Archivo de imagen
  * @param {string} vehicleId - ID del vehículo
  * @param {number} index - Índice de la imagen
- * @returns {Promise<string>} URL de descarga de la imagen
+ * @returns {Promise<Object>} Información de la imagen subida
  */
 export const uploadVehicleImage = async (file, vehicleId, index) => {
   try {
@@ -119,22 +119,97 @@ export const deleteVehicleImage = async (imageUrl) => {
 };
 
 /**
- * Elimina todas las imágenes de un vehículo
+ * 🐛 FIX BUG #2: Elimina todas las imágenes de un vehículo y la carpeta
+ * Ahora con mejor logging y manejo de errores para asegurar que se eliminen todas las imágenes
  * @param {string} vehicleId - ID del vehículo
- * @returns {Promise<void>}
+ * @returns {Promise<Object>} Resultado de la operación con detalles
  */
 export const deleteAllVehicleImages = async (vehicleId) => {
+  try {
+    console.log(`🗑️ Iniciando eliminación de imágenes para vehículo: ${vehicleId}`);
+    
+    const folderRef = ref(storage, `vehicles/${vehicleId}`);
+    const result = await listAll(folderRef);
+    
+    if (result.items.length === 0) {
+      console.log(`⚠️ No se encontraron imágenes para el vehículo ${vehicleId}`);
+      return {
+        success: true,
+        deletedCount: 0,
+        message: 'No había imágenes para eliminar'
+      };
+    }
+    
+    console.log(`📁 Encontradas ${result.items.length} imágenes para eliminar`);
+    
+    // Eliminar cada imagen y recopilar resultados
+    const deleteResults = await Promise.allSettled(
+      result.items.map(async (itemRef) => {
+        try {
+          await deleteObject(itemRef);
+          console.log(`✅ Eliminada: ${itemRef.fullPath}`);
+          return { success: true, path: itemRef.fullPath };
+        } catch (error) {
+          console.error(`❌ Error eliminando ${itemRef.fullPath}:`, error);
+          return { success: false, path: itemRef.fullPath, error: error.message };
+        }
+      })
+    );
+    
+    const successCount = deleteResults.filter(r => r.status === 'fulfilled' && r.value.success).length;
+    const failureCount = deleteResults.filter(r => r.status === 'rejected' || !r.value.success).length;
+    
+    console.log(`✅ Eliminación completada: ${successCount} exitosas, ${failureCount} fallidas`);
+    
+    return {
+      success: failureCount === 0,
+      deletedCount: successCount,
+      failedCount: failureCount,
+      total: result.items.length,
+      message: failureCount === 0 
+        ? `${successCount} imágenes eliminadas exitosamente` 
+        : `${successCount} eliminadas, ${failureCount} fallaron`
+    };
+    
+  } catch (error) {
+    console.error(`❌ Error crítico eliminando imágenes del vehículo ${vehicleId}:`, error);
+    
+    // Verificar si el error es porque la carpeta no existe
+    if (error.code === 'storage/object-not-found') {
+      return {
+        success: true,
+        deletedCount: 0,
+        message: 'La carpeta no existe (ya fue eliminada o nunca existió)'
+      };
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Verifica si existen imágenes para un vehículo
+ * @param {string} vehicleId - ID del vehículo
+ * @returns {Promise<Object>} Información sobre las imágenes existentes
+ */
+export const checkVehicleImages = async (vehicleId) => {
   try {
     const folderRef = ref(storage, `vehicles/${vehicleId}`);
     const result = await listAll(folderRef);
     
-    const deletePromises = result.items.map(itemRef => deleteObject(itemRef));
-    await Promise.all(deletePromises);
-    
-    console.log(`${result.items.length} imágenes eliminadas para vehículo ${vehicleId}`);
+    return {
+      exists: result.items.length > 0,
+      count: result.items.length,
+      paths: result.items.map(item => item.fullPath)
+    };
   } catch (error) {
-    console.error('Error eliminando imágenes del vehículo:', error);
-    throw error;
+    console.error('Error verificando imágenes:', error);
+    return {
+      exists: false,
+      count: 0,
+      paths: [],
+      error: error.message
+    };
   }
 };
 
@@ -244,7 +319,7 @@ export const generateThumbnail = async (file) => {
 
 /**
  * Valida un archivo de imagen
- * @param {File} file 
+ * @param {File} file - Archivo a validar
  * @returns {Object} { valid: boolean, error: string }
  */
 export const validateImageFile = (file) => {
