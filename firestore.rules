@@ -13,7 +13,45 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    // Reglas para la colección de clientes
+    // ============================================
+    // COLECCIÓN DE INVENTARIO (VEHÍCULOS)
+    // ============================================
+    match /inventory/{vehicleId} {
+      // Lectura pública: cualquiera puede ver vehículos publicados
+      allow read: if resource.data.isPublished == true;
+      
+      // Lectura para admin: usuarios autenticados pueden ver todos los vehículos
+      allow read: if isSignedIn();
+      
+      // Escritura: solo usuarios autenticados
+      allow create, update, delete: if isSignedIn();
+    }
+    
+    // ============================================
+    // COLECCIÓN DE CONFIGURACIÓN
+    // ============================================
+    match /settings/{document} {
+      // Lectura pública: todos pueden ver la configuración (necesario para el Hero)
+      allow read: if true;
+      
+      // Escritura: solo usuarios autenticados
+      allow write: if isSignedIn();
+    }
+    
+    // ============================================
+    // COLECCIÓN DE LEADS (FORMULARIOS DE CONTACTO)
+    // ============================================
+    match /leads/{leadId} {
+      // Crear: cualquiera puede enviar un formulario de contacto
+      allow create: if true;
+      
+      // Lectura y actualización: solo usuarios autenticados
+      allow read, update, delete: if isSignedIn();
+    }
+    
+    // ============================================
+    // COLECCIÓN DE CLIENTES
+    // ============================================
     match /clients/{clientId} {
       // Solo usuarios autenticados pueden leer
       allow read: if isSignedIn();
@@ -25,7 +63,9 @@ service cloud.firestore {
       allow update, delete: if isSignedIn();
     }
     
-    // Reglas para la colección de pagos
+    // ============================================
+    // COLECCIÓN DE PAGOS
+    // ============================================
     match /payments/{paymentId} {
       // Solo usuarios autenticados pueden leer
       allow read: if isSignedIn();
@@ -39,7 +79,25 @@ service cloud.firestore {
       allow update, delete: if isSignedIn();
     }
     
-    // Bloquear acceso a cualquier otra colección
+    // ============================================
+    // COLECCIÓN DE SCHEDULED_PAYMENTS
+    // ============================================
+    match /scheduled_payments/{paymentId} {
+      // Solo usuarios autenticados pueden acceder
+      allow read, write: if isSignedIn();
+    }
+    
+    // ============================================
+    // COLECCIÓN DE CONTRACTS (CONTRATOS)
+    // ============================================
+    match /contracts/{contractId} {
+      // Solo usuarios autenticados pueden acceder
+      allow read, write: if isSignedIn();
+    }
+    
+    // ============================================
+    // BLOQUEAR CUALQUIER OTRA COLECCIÓN NO ESPECIFICADA
+    // ============================================
     match /{document=**} {
       allow read, write: if false;
     }

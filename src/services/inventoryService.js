@@ -143,54 +143,51 @@ export const getAllVehicles = async (filters = {}) => {
 };
 
 /**
- * Obtiene vehículos publicados para el sitio público
+ * 🔧 OPTIMIZADO: Obtiene vehículos publicados para el sitio público
+ * Usa filtrado en memoria para evitar necesitar múltiples índices
  * @param {Object} filters - Filtros de búsqueda
  * @returns {Promise<Array>} Lista de vehículos disponibles
  */
 export const getPublicVehicles = async (filters = {}) => {
   try {
-    const constraints = [
+    // ✅ Query simple - solo usa el índice: isPublished + status + createdAt
+    const q = query(
+      collection(db, INVENTORY_COLLECTION),
       where('isPublished', '==', true),
-      where('status', '==', 'available')
-    ];
+      where('status', '==', 'available'),
+      orderBy('createdAt', 'desc')
+    );
     
-    // Filtros adicionales
-    if (filters.make) {
-      constraints.push(where('make', '==', filters.make));
-    }
-    
-    if (filters.year) {
-      constraints.push(where('year', '==', parseInt(filters.year)));
-    }
-    
-    if (filters.bodyType) {
-      constraints.push(where('bodyType', '==', filters.bodyType));
-    }
-    
-    // Ordenamiento por defecto: más recientes primero
-    const orderField = filters.sortBy || 'createdAt';
-    const orderDirection = filters.sortOrder || 'desc';
-    constraints.push(orderBy(orderField, orderDirection));
-    
-    // Límite
-    if (filters.limit) {
-      constraints.push(limit(filters.limit));
-    }
-    
-    const q = query(collection(db, INVENTORY_COLLECTION), ...constraints);
     const snapshot = await getDocs(q);
     
-    const vehicles = snapshot.docs.map(doc => ({
+    let vehicles = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
     
-    // Filtros adicionales que no se pueden hacer en Firestore
-    let filteredVehicles = vehicles;
+    // 🔍 FILTROS EN MEMORIA (no requieren índices adicionales)
     
-    // Filtro de precio
+    // Filtro por marca
+    if (filters.make) {
+      vehicles = vehicles.filter(v => v.make === filters.make);
+    }
+    
+    // Filtro por año
+    if (filters.year) {
+      const targetYear = parseInt(filters.year);
+      vehicles = vehicles.filter(v => v.year === targetYear);
+    }
+    
+    // Filtro por tipo de carrocería
+    if (filters.bodyType) {
+      vehicles = vehicles.filter(v => 
+        v.bodyClass === filters.bodyType || v.bodyType === filters.bodyType
+      );
+    }
+    
+    // Filtro por rango de precio
     if (filters.minPrice || filters.maxPrice) {
-      filteredVehicles = filteredVehicles.filter(v => {
+      vehicles = vehicles.filter(v => {
         const price = v.price || 0;
         if (filters.minPrice && price < filters.minPrice) return false;
         if (filters.maxPrice && price > filters.maxPrice) return false;
@@ -198,14 +195,47 @@ export const getPublicVehicles = async (filters = {}) => {
       });
     }
     
-    // Filtro de millaje
+    // Filtro por millaje máximo
     if (filters.maxMileage) {
-      filteredVehicles = filteredVehicles.filter(v => 
-        (v.mileage || 0) <= filters.maxMileage
-      );
+      vehicles = vehicles.filter(v => (v.mileage || 0) <= filters.maxMileage);
     }
     
-    return filteredVehicles;
+    // Filtro por tipo de financiamiento
+    if (filters.financingType) {
+      vehicles = vehicles.filter(v => v.financingType === filters.financingType);
+    }
+    
+    // 📊 ORDENAMIENTO (en memoria si se especifica diferente)
+    if (filters.sortBy && filters.sortBy !== 'createdAt') {
+      const sortBy = filters.sortBy;
+      const sortOrder = filters.sortOrder || 'desc';
+      
+      vehicles.sort((a, b) => {
+        let aVal = a[sortBy];
+        let bVal = b[sortBy];
+        
+        // Manejar fechas
+        if (sortBy === 'updatedAt' || sortBy === 'publishedAt') {
+          aVal = aVal?.toDate?.() || new Date(aVal || 0);
+          bVal = bVal?.toDate?.() || new Date(bVal || 0);
+        }
+        
+        // Comparación
+        if (sortOrder === 'asc') {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
+    }
+    
+    // Límite
+    if (filters.limit) {
+      vehicles = vehicles.slice(0, filters.limit);
+    }
+    
+    return vehicles;
+    
   } catch (error) {
     console.error('Error obteniendo vehículos públicos:', error);
     throw error;
@@ -382,7 +412,7 @@ export const getFilterOptions = async () => {
     
     const makes = [...new Set(vehicles.map(v => v.make))].sort();
     const years = [...new Set(vehicles.map(v => v.year))].sort((a, b) => b - a);
-    const bodyTypes = [...new Set(vehicles.map(v => v.bodyType).filter(Boolean))].sort();
+    const bodyTypes = [...new Set(vehicles.map(v => v.bodyType || v.bodyClass).filter(Boolean))].sort();
     
     // Rangos de precio
     const prices = vehicles.map(v => v.price || 0).filter(p => p > 0);

@@ -3,24 +3,68 @@ import { Search, Filter, X } from 'lucide-react';
 import { usePublicVehicles, useFilterOptions } from '../../hooks/usePublicVehicles';
 import VehicleCard from '../../components/public/VehicleCard';
 
+const STORAGE_KEY = 'inventory_filters';
+
 export default function InventoryPage() {
   const [showFilters, setShowFilters] = useState(false);
-  const [search, setSearch] = useState('');
-  const [filters, setFilters] = useState({});
+  
+  // 🔧 Cargar filtros desde sessionStorage al iniciar
+  const [search, setSearch] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).search || '' : '';
+    } catch {
+      return '';
+    }
+  });
+  
+  const [filters, setFilters] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved).filters || {} : {};
+    } catch {
+      return {};
+    }
+  });
   
   const { vehicles, loading, updateFilters } = usePublicVehicles(filters);
   const { options, loading: optionsLoading } = useFilterOptions();
 
+  // 💾 Guardar filtros en sessionStorage cuando cambien
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters, search }));
+    } catch (error) {
+      console.error('Error guardando filtros:', error);
+    }
+  }, [filters, search]);
+
+  // 🔧 FIX: Eliminar keys con valor undefined/vacío del objeto
   const handleFilterChange = (key, value) => {
-    const newFilters = { ...filters, [key]: value };
+    const newFilters = { ...filters };
+    
+    // Si el valor es undefined, null o string vacío, eliminar la key
+    if (value === undefined || value === null || value === '') {
+      delete newFilters[key];
+    } else {
+      newFilters[key] = value;
+    }
+    
     setFilters(newFilters);
     updateFilters(newFilters);
   };
 
   const clearFilters = () => {
-    setFilters({});
-    updateFilters({});
+    const emptyFilters = {};
+    setFilters(emptyFilters);
+    updateFilters(emptyFilters);
     setSearch('');
+    // También limpiar del storage
+    try {
+      sessionStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error('Error limpiando filtros:', error);
+    }
   };
 
   const filteredVehicles = vehicles.filter(vehicle => {

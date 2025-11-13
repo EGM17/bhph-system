@@ -19,6 +19,7 @@ export const usePublicVehicles = (initialFilters = {}) => {
 
   useEffect(() => {
     loadVehicles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
   const loadVehicles = async () => {
@@ -35,8 +36,9 @@ export const usePublicVehicles = (initialFilters = {}) => {
     }
   };
 
+  // 🔧 FIX: Reemplazar completamente los filtros en lugar de mezclarlos
   const updateFilters = (newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters(newFilters); // Reemplaza completamente, no hace merge
   };
 
   const clearFilters = () => {
@@ -64,6 +66,7 @@ export const useFeaturedVehicles = (count = 6) => {
 
   useEffect(() => {
     loadFeaturedVehicles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [count]);
 
   const loadFeaturedVehicles = async () => {
@@ -85,6 +88,7 @@ export const useFeaturedVehicles = (count = 6) => {
 
 /**
  * Hook para obtener un vehículo específico
+ * 🔧 CORREGIDO: Previene el loop infinito de recargas
  */
 export const useVehicle = (vehicleId) => {
   const [vehicle, setVehicle] = useState(null);
@@ -92,20 +96,53 @@ export const useVehicle = (vehicleId) => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (vehicleId) {
-      loadVehicle();
-    }
+    if (!vehicleId) return;
+
+    let isMounted = true;
+
+    const loadVehicle = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const data = await getVehicleById(vehicleId);
+        
+        if (isMounted) {
+          setVehicle(data);
+          
+          // Incrementar contador de vistas de forma asíncrona sin bloquear
+          incrementViewCount(vehicleId).catch(err => {
+            console.warn('Error incrementando vistas (no crítico):', err);
+          });
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message);
+          console.error('Error cargando vehículo:', err);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadVehicle();
+
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
   }, [vehicleId]);
 
-  const loadVehicle = async () => {
+  const refresh = async () => {
+    if (!vehicleId) return;
+    
     try {
       setLoading(true);
       setError(null);
       const data = await getVehicleById(vehicleId);
       setVehicle(data);
-      
-      // Incrementar contador de vistas
-      await incrementViewCount(vehicleId);
     } catch (err) {
       setError(err.message);
       console.error('Error cargando vehículo:', err);
@@ -114,7 +151,7 @@ export const useVehicle = (vehicleId) => {
     }
   };
 
-  return { vehicle, loading, error, refresh: loadVehicle };
+  return { vehicle, loading, error, refresh };
 };
 
 /**
