@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 
 // Admin Components
-import './utils/storageCleanupUtils';
+// import './utils/storageCleanupUtils';  // ← Listo para usar si se necesita limpiar imagenes huerfanas en carpetas
 import Dashboard from './components/Dashboard';
 import ClientList from './components/ClientList';
 import PaymentHistory from './components/PaymentHistory';
