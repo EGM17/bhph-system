@@ -8,7 +8,6 @@ const STORAGE_KEY = 'inventory_filters';
 export default function InventoryPage() {
   const [showFilters, setShowFilters] = useState(false);
   
-  // 🔧 Cargar filtros desde sessionStorage al iniciar
   const [search, setSearch] = useState(() => {
     try {
       const saved = sessionStorage.getItem(STORAGE_KEY);
@@ -30,7 +29,6 @@ export default function InventoryPage() {
   const { vehicles, loading, updateFilters } = usePublicVehicles(filters);
   const { options, loading: optionsLoading } = useFilterOptions();
 
-  // 💾 Guardar filtros en sessionStorage cuando cambien
   useEffect(() => {
     try {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ filters, search }));
@@ -39,11 +37,9 @@ export default function InventoryPage() {
     }
   }, [filters, search]);
 
-  // 🔧 FIX: Eliminar keys con valor undefined/vacío del objeto
   const handleFilterChange = (key, value) => {
     const newFilters = { ...filters };
     
-    // Si el valor es undefined, null o string vacío, eliminar la key
     if (value === undefined || value === null || value === '') {
       delete newFilters[key];
     } else {
@@ -59,7 +55,6 @@ export default function InventoryPage() {
     setFilters(emptyFilters);
     updateFilters(emptyFilters);
     setSearch('');
-    // También limpiar del storage
     try {
       sessionStorage.removeItem(STORAGE_KEY);
     } catch (error) {
@@ -86,7 +81,7 @@ export default function InventoryPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl font-bold mb-4">Conoce nuestro inventario</h1>
           <p className="text-xl text-blue-100">
-            {filteredVehicles.length} vehículos disponibles
+            <span className="notranslate">{filteredVehicles.length}</span>{' '}vehículos disponibles
           </p>
         </div>
       </div>
@@ -136,7 +131,8 @@ export default function InventoryPage() {
           {showFilters && (
             <div className="mt-6 pt-6 border-t border-gray-200">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Marca */}
+                
+                {/* Marca - 🔧 NO TRADUCIR */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Marca
@@ -144,12 +140,12 @@ export default function InventoryPage() {
                   <select
                     value={filters.make || ''}
                     onChange={(e) => handleFilterChange('make', e.target.value || undefined)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="notranslate w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={optionsLoading}
                   >
                     <option value="">Todas</option>
                     {options.makes.map(make => (
-                      <option key={make} value={make}className="notranslate">{make}</option>
+                      <option key={make} value={make} className="notranslate">{make}</option>
                     ))}
                   </select>
                 </div>
@@ -162,12 +158,12 @@ export default function InventoryPage() {
                   <select
                     value={filters.year || ''}
                     onChange={(e) => handleFilterChange('year', e.target.value || undefined)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="notranslate w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={optionsLoading}
                   >
                     <option value="">Todos</option>
                     {options.years.map(year => (
-                      <option key={year} value={year}>{year}</option>
+                      <option key={year} value={year} className="notranslate">{year}</option>
                     ))}
                   </select>
                 </div>
@@ -183,27 +179,27 @@ export default function InventoryPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Sin límite</option>
-                    <option value="10000">Hasta $5,000</option>
-                    <option value="15000">Hasta $7,000</option>
-                    <option value="20000">Hasta $9,000</option>
-                    <option value="25000">Hasta $15,000</option>
+                    <option value="10000">Hasta $10,000</option>
+                    <option value="15000">Hasta $15,000</option>
+                    <option value="20000">Hasta $20,000</option>
+                    <option value="25000">Hasta $25,000</option>
                   </select>
                 </div>
 
-                {/* Tipo de Carrocería */}
+                {/* Tipo de Carrocería - 🔧 NO TRADUCIR */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Estilo
+                    Tipo de Carrocería
                   </label>
                   <select
                     value={filters.bodyType || ''}
                     onChange={(e) => handleFilterChange('bodyType', e.target.value || undefined)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="notranslate w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     disabled={optionsLoading}
                   >
                     <option value="">Todos</option>
                     {options.bodyTypes.map(type => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type} value={type} className="notranslate">{type}</option>
                     ))}
                   </select>
                 </div>
