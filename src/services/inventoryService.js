@@ -146,6 +146,7 @@ export const getAllVehicles = async (filters = {}) => {
 /**
  * 🔧 OPTIMIZADO: Obtiene vehículos publicados para el sitio público
  * Usa filtrado en memoria para evitar necesitar múltiples índices
+ * ⭐ PRIORIZA vehículos destacados primero
  * @param {Object} filters - Filtros de búsqueda
  * @returns {Promise<Array>} Lista de vehículos disponibles
  */
@@ -206,29 +207,45 @@ export const getPublicVehicles = async (filters = {}) => {
       vehicles = vehicles.filter(v => v.financingType === filters.financingType);
     }
     
-    // 📊 ORDENAMIENTO (en memoria si se especifica diferente)
-    if (filters.sortBy && filters.sortBy !== 'createdAt') {
-      const sortBy = filters.sortBy;
-      const sortOrder = filters.sortOrder || 'desc';
+    // 📊 ORDENAMIENTO
+    const sortBy = filters.sortBy || 'featured'; // Default: destacados primero
+    const sortOrder = filters.sortOrder || 'desc';
+    
+    vehicles.sort((a, b) => {
+      // ⭐ PRIORIDAD 1: Destacados siempre primero (a menos que se ordene específicamente por otra cosa)
+      if (sortBy === 'featured') {
+        const aFeatured = a.isFeatured ? 1 : 0;
+        const bFeatured = b.isFeatured ? 1 : 0;
+        if (aFeatured !== bFeatured) {
+          return bFeatured - aFeatured; // Destacados primero
+        }
+        // Si ambos son destacados o ninguno lo es, ordenar por fecha
+        const aDate = a.createdAt?.toDate?.() || new Date(0);
+        const bDate = b.createdAt?.toDate?.() || new Date(0);
+        return bDate - aDate;
+      }
       
-      vehicles.sort((a, b) => {
-        let aVal = a[sortBy];
-        let bVal = b[sortBy];
-        
-        // Manejar fechas
-        if (sortBy === 'updatedAt' || sortBy === 'publishedAt') {
-          aVal = aVal?.toDate?.() || new Date(aVal || 0);
-          bVal = bVal?.toDate?.() || new Date(bVal || 0);
-        }
-        
-        // Comparación
-        if (sortOrder === 'asc') {
-          return aVal > bVal ? 1 : -1;
-        } else {
-          return aVal < bVal ? 1 : -1;
-        }
-      });
-    }
+      // Ordenamiento personalizado por campo específico
+      let aVal = a[sortBy];
+      let bVal = b[sortBy];
+      
+      // Manejar fechas
+      if (sortBy === 'createdAt' || sortBy === 'updatedAt' || sortBy === 'publishedAt') {
+        aVal = aVal?.toDate?.() || new Date(0);
+        bVal = bVal?.toDate?.() || new Date(0);
+      }
+      
+      // Manejar valores nulos/undefined
+      if (aVal === null || aVal === undefined) aVal = 0;
+      if (bVal === null || bVal === undefined) bVal = 0;
+      
+      // Comparación
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : (aVal < bVal ? -1 : 0);
+      } else {
+        return aVal < bVal ? 1 : (aVal > bVal ? -1 : 0);
+      }
+    });
     
     // Límite
     if (filters.limit) {
