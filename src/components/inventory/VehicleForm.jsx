@@ -3,6 +3,7 @@ import { ArrowLeft, Save, Eye, Loader } from 'lucide-react';
 import VINDecoder from './VINDecoder';
 import ImageUploader from './ImageUploader';
 import { uploadMultipleImages } from '../../services/storageService';
+import { createVehicle, updateVehicle } from '../../services/inventoryService';
 import { formatVehicleTitle } from '../../services/vinService';
 
 export default function VehicleForm({ vehicle, onSave, onCancel }) {
@@ -15,17 +16,17 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     year: new Date().getFullYear(),
     trim: '',
     bodyClass: '',
-    mpg: '', // NUEVO: Millas por galón (opcional)
+    mpg: '',
     
     // Información del dealer
     price: 0,
-    showPrice: true, // Controla si se muestra el precio
+    showPrice: true,
     mileage: 0,
     condition: 'used',
     status: 'available',
     
-    // NUEVO: Tipo de financiamiento
-    financingType: 'in-house', // 'in-house' o 'cash-only'
+    // Tipo de financiamiento
+    financingType: 'in-house',
     
     // Imágenes
     images: [],
@@ -34,11 +35,11 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     description: '',
     features: [],
     
-    // Financiamiento (INDEPENDIENTES entre sí)
+    // Financiamiento
     downPaymentFrom: 0,
     monthlyPaymentFrom: 0,
-    showDownPayment: true, // Controla si se muestra enganche
-    showMonthlyPayment: true, // Controla si se muestra pago mensual
+    showDownPayment: true,
+    showMonthlyPayment: true,
     
     // Metadata
     isFeatured: false,
@@ -93,6 +94,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     }));
   };
 
+  // 🔧 FIX: Nuevo flujo corregido para evitar carpetas temp
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -109,47 +111,96 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     setSaving(true);
 
     try {
-      let imageUrls = [];
-
-      // Si hay imágenes nuevas (Files), subirlas
+      // Separar imágenes nuevas y existentes
       const newImages = images.filter(img => img.file);
       const existingImages = images.filter(img => img.url && !img.file);
 
-      if (newImages.length > 0) {
-        // Generar ID temporal si es nuevo vehículo
-        const vehicleId = vehicle?.id || `temp_${Date.now()}`;
+      let vehicleId = vehicle?.id; // Si existe, usar el ID actual
+      let imageUrls = existingImages; // Empezar con las imágenes existentes
+
+      // ✅ CASO 1: EDITAR vehículo existente
+      if (vehicle) {
+        // Si hay imágenes nuevas, subirlas con el ID existente
+        if (newImages.length > 0) {
+          console.log(`📤 Subiendo ${newImages.length} imágenes nuevas para vehículo ${vehicleId}`);
+          
+          const uploadedImages = await uploadMultipleImages(
+            newImages.map(img => img.file),
+            vehicleId,
+            (current, total) => {
+              console.log(`Subiendo imagen ${current}/${total}`);
+            }
+          );
+
+          imageUrls = [...existingImages, ...uploadedImages];
+        }
+
+        // Ordenar y actualizar
+        const sortedImages = imageUrls
+          .sort((a, b) => a.order - b.order)
+          .map((img, index) => ({
+            ...img,
+            order: index,
+            isPrimary: img.isPrimary || index === 0
+          }));
+
+        const vehicleData = {
+          ...formData,
+          images: sortedImages
+        };
+
+        // Actualizar el vehículo
+        await updateVehicle(vehicleId, vehicleData);
+        await onSave(vehicleData);
+      } 
+      // ✅ CASO 2: CREAR vehículo nuevo (FLUJO CORREGIDO)
+      else {
+        console.log('🆕 Creando nuevo vehículo...');
+        
+        // Paso 1: Crear el documento SIN imágenes para obtener el ID real
+        const tempVehicleData = {
+          ...formData,
+          images: [] // Sin imágenes todavía
+        };
+        
+        vehicleId = await createVehicle(tempVehicleData);
+        console.log(`✅ Vehículo creado con ID real: ${vehicleId}`);
+        
+        // Paso 2: Subir imágenes con el ID REAL
+        console.log(`📤 Subiendo ${newImages.length} imágenes con ID real...`);
         
         const uploadedImages = await uploadMultipleImages(
           newImages.map(img => img.file),
-          vehicleId,
+          vehicleId, // ✅ Usar el ID REAL, no temp
           (current, total) => {
             console.log(`Subiendo imagen ${current}/${total}`);
           }
         );
 
-        imageUrls = [...existingImages, ...uploadedImages];
-      } else {
-        imageUrls = existingImages;
+        // Paso 3: Ordenar imágenes
+        const sortedImages = uploadedImages
+          .sort((a, b) => a.order - b.order)
+          .map((img, index) => ({
+            ...img,
+            order: index,
+            isPrimary: img.isPrimary || index === 0
+          }));
+
+        // Paso 4: Actualizar el documento con las URLs de las imágenes
+        console.log('📝 Actualizando vehículo con URLs de imágenes...');
+        await updateVehicle(vehicleId, { images: sortedImages });
+        
+        console.log('✅ Vehículo guardado completamente');
+        
+        await onSave({
+          ...formData,
+          id: vehicleId,
+          images: sortedImages
+        });
       }
-
-      // Ordenar imágenes por orden y asegurar isPrimary
-      const sortedImages = imageUrls
-        .sort((a, b) => a.order - b.order)
-        .map((img, index) => ({
-          ...img,
-          order: index,
-          isPrimary: img.isPrimary || index === 0
-        }));
-
-      const vehicleData = {
-        ...formData,
-        images: sortedImages
-      };
-
-      await onSave(vehicleData);
       
     } catch (error) {
-      console.error('Error guardando vehículo:', error);
+      console.error('❌ Error guardando vehículo:', error);
       alert('Error al guardar el vehículo: ' + error.message);
     } finally {
       setSaving(false);
@@ -222,7 +273,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
             <VINDecoder onVehicleDecoded={handleVehicleDecoded} />
           )}
 
-          {/* Información del Vehículo */}
+          {/* Resto del formulario - mantener igual */}
           {vinDecoded && (
             <>
               <div className="bg-white rounded-lg shadow p-6">
@@ -246,7 +297,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Stock # *
+                      Número de Stock
                     </label>
                     <input
                       type="text"
@@ -254,21 +305,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       value={formData.stockNumber}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Año *
-                    </label>
-                    <input
-                      type="number"
-                      name="year"
-                      value={formData.year}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
+                      placeholder="Ej: A1234"
                     />
                   </div>
 
@@ -280,9 +317,8 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       type="text"
                       name="make"
                       value={formData.make}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
+                      readOnly
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
                     />
                   </div>
 
@@ -294,15 +330,27 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       type="text"
                       name="model"
                       value={formData.model}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
+                      readOnly
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Trim
+                      Año *
+                    </label>
+                    <input
+                      type="number"
+                      name="year"
+                      value={formData.year}
+                      readOnly
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Versión/Trim
                     </label>
                     <input
                       type="text"
@@ -310,7 +358,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       value={formData.trim}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="EX, LX, Sport, etc."
+                      placeholder="Ej: LX, EX, Sport"
                     />
                   </div>
 
@@ -322,15 +370,14 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       type="text"
                       name="bodyClass"
                       value={formData.bodyClass}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Sedan, SUV, Truck, etc."
+                      readOnly
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Millaje *
+                      Millaje (mi)
                     </label>
                     <input
                       type="number"
@@ -338,14 +385,13 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       value={formData.mileage}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
+                      placeholder="85000"
                     />
                   </div>
 
-                  {/* NUEVO: MPG */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      MPG (Opcional)
+                      MPG (Millas por galón)
                     </label>
                     <input
                       type="text"
@@ -353,216 +399,149 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       value={formData.mpg}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: 25 city / 30 hwy"
+                      placeholder="Ej: 25 city / 32 hwy"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Millas por galón (ciudad/carretera)
-                    </p>
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Condición *
+                      Condición
                     </label>
                     <select
                       name="condition"
                       value={formData.condition}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      required
                     >
-                      <option value="new">Nuevo</option>
                       <option value="used">Usado</option>
                       <option value="certified">Certificado</option>
+                      <option value="new">Nuevo</option>
                     </select>
                   </div>
                 </div>
               </div>
 
-              {/* NUEVO: Toggle Tipo de Financiamiento */}
+              {/* Precio y Financiamiento */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  🏦 Tipo de Venta
-                </h2>
-                
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition ${
-                      formData.financingType === 'in-house' 
-                        ? 'border-orange-500 bg-orange-50' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="financingType"
-                        value="in-house"
-                        checked={formData.financingType === 'in-house'}
-                        onChange={handleChange}
-                        className="w-5 h-5 text-orange-600"
-                      />
-                      <div className="ml-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">🏦</span>
-                          <span className="font-semibold text-gray-900">Financiamiento en Casa</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          0% intereses - Pagos semanales o quincenales
-                        </p>
-                      </div>
-                    </label>
-
-                    <label className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition ${
-                      formData.financingType === 'cash-only' 
-                        ? 'border-green-500 bg-green-50' 
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="financingType"
-                        value="cash-only"
-                        checked={formData.financingType === 'cash-only'}
-                        onChange={handleChange}
-                        className="w-5 h-5 text-green-600"
-                      />
-                      <div className="ml-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">💵</span>
-                          <span className="font-semibold text-gray-900">Solo Efectivo</span>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Pago completo al momento de la compra
-                        </p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              {/* Precio y Opciones de Visualización */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  💰 Precio y Opciones de Visualización
+                  💰 Precio y Financiamiento
                 </h2>
                 
                 <div className="space-y-6">
-                  {/* Precio */}
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Precio de Venta *
+                        Precio del Vehículo
                       </label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-lg">$</span>
+                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
                         <input
                           type="number"
                           name="price"
                           value={formData.price}
                           onChange={handleChange}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-lg font-semibold"
-                          required
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="15000"
                         />
                       </div>
-                    </div>
-
-                    <div className="flex items-center">
-                      <label className="flex items-center gap-3 cursor-pointer">
+                      <label className="flex items-center gap-2 mt-2 cursor-pointer">
                         <input
                           type="checkbox"
                           name="showPrice"
                           checked={formData.showPrice !== false}
                           onChange={handleChange}
-                          className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500 focus:ring-2"
+                          className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                         />
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">
-                            Mostrar precio público
-                          </span>
-                          <p className="text-xs text-gray-500">
-                            Visible en el sitio web
-                          </p>
-                        </div>
+                        <span className="text-xs text-gray-600">
+                          Mostrar precio en el sitio web
+                        </span>
                       </label>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Tipo de Financiamiento
+                      </label>
+                      <select
+                        name="financingType"
+                        value={formData.financingType}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="in-house">In-House (Sin crédito, sin ITIN)</option>
+                        <option value="cash-only">Solo efectivo</option>
+                      </select>
                     </div>
                   </div>
 
-                  {/* Opciones de Financiamiento - Solo visible si es in-house */}
                   {formData.financingType === 'in-house' && (
-                    <div className="border-t pt-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-800">
-                          📊 Información de Financiamiento
-                        </h3>
-                        <span className="text-xs bg-orange-100 text-orange-700 px-3 py-1 rounded-full font-semibold">
-                          0% INTERESES
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Pago Mensual Desde
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <input
-                              type="number"
-                              name="monthlyPaymentFrom"
-                              value={formData.monthlyPaymentFrom}
-                              onChange={handleChange}
-                              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                              placeholder="350"
-                            />
-                          </div>
-                          <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              name="showMonthlyPayment"
-                              checked={formData.showMonthlyPayment !== false}
-                              onChange={handleChange}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-xs text-gray-600">
-                              Mostrar en el sitio web
-                            </span>
-                          </label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Enganche Desde
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                          <input
+                            type="number"
+                            name="downPaymentFrom"
+                            value={formData.downPaymentFrom}
+                            onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="2000"
+                          />
                         </div>
+                        <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="showDownPayment"
+                            checked={formData.showDownPayment !== false}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-xs text-gray-600">
+                            Mostrar en el sitio web
+                          </span>
+                        </label>
+                      </div>
 
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Enganche Desde
-                          </label>
-                          <div className="relative">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <input
-                              type="number"
-                              name="downPaymentFrom"
-                              value={formData.downPaymentFrom}
-                              onChange={handleChange}
-                              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                              placeholder="2000"
-                            />
-                          </div>
-                          <label className="flex items-center gap-2 mt-2 cursor-pointer">
-                            <input
-                              type="checkbox"
-                              name="showDownPayment"
-                              checked={formData.showDownPayment !== false}
-                              onChange={handleChange}
-                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                            />
-                            <span className="text-xs text-gray-600">
-                              Mostrar en el sitio web
-                            </span>
-                          </label>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Pago Mensual Desde
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
+                          <input
+                            type="number"
+                            name="monthlyPaymentFrom"
+                            value={formData.monthlyPaymentFrom}
+                            onChange={handleChange}
+                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            placeholder="300"
+                          />
                         </div>
+                        <label className="flex items-center gap-2 mt-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="showMonthlyPayment"
+                            checked={formData.showMonthlyPayment !== false}
+                            onChange={handleChange}
+                            className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <span className="text-xs text-gray-600">
+                            Mostrar en el sitio web
+                          </span>
+                        </label>
                       </div>
+                    </div>
+                  )}
 
-                      <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                        <p className="text-sm text-orange-800">
-                          <strong>💡 Importante:</strong> Los checkboxes controlan qué información se muestra públicamente. 
-                          Puedes ocultar cualquier dato individualmente sin afectar los demás.
-                        </p>
-                      </div>
+                  {formData.financingType === 'in-house' && (
+                    <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                      <p className="text-sm text-orange-800">
+                        <strong>💡 Importante:</strong> Los checkboxes controlan qué información se muestra públicamente. 
+                        Puedes ocultar cualquier dato individualmente sin afectar los demás.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -605,30 +584,30 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Características Especiales
                     </label>
-                    <div className="flex gap-2 mb-3">
+                    <div className="flex gap-2">
                       <input
                         type="text"
                         value={newFeature}
                         onChange={(e) => setNewFeature(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ej: Bluetooth, Cámara de reversa, Asientos de cuero..."
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Ej: Sistema de navegación GPS"
                       />
                       <button
                         type="button"
                         onClick={handleAddFeature}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
                       >
                         Agregar
                       </button>
                     </div>
-
+                    
                     {formData.features && formData.features.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="mt-4 flex flex-wrap gap-2">
                         {formData.features.map((feature, index) => (
                           <span
                             key={index}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
+                            className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
                           >
                             {feature}
                             <button

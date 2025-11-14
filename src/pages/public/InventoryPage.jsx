@@ -149,7 +149,7 @@ export default function InventoryPage() {
                   >
                     <option value="">Todas</option>
                     {options.makes.map(make => (
-                      <option key={make} value={make}>{make}</option>
+                      <option key={make} value={make}className="notranslate">{make}</option>
                     ))}
                   </select>
                 </div>
@@ -183,17 +183,17 @@ export default function InventoryPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Sin límite</option>
-                    <option value="10000">Hasta $10,000</option>
-                    <option value="15000">Hasta $15,000</option>
-                    <option value="20000">Hasta $20,000</option>
-                    <option value="25000">Hasta $25,000</option>
+                    <option value="10000">Hasta $5,000</option>
+                    <option value="15000">Hasta $7,000</option>
+                    <option value="20000">Hasta $9,000</option>
+                    <option value="25000">Hasta $15,000</option>
                   </select>
                 </div>
 
                 {/* Tipo de Carrocería */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo
+                    Estilo
                   </label>
                   <select
                     value={filters.bodyType || ''}

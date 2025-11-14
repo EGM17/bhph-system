@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 
 // Admin Components
+import './utils/storageCleanupUtils';
 import Dashboard from './components/Dashboard';
 import ClientList from './components/ClientList';
 import PaymentHistory from './components/PaymentHistory';
