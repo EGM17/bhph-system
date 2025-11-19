@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SettingsProvider } from './context/SettingsContext';
 
 // Admin Components
-// import './utils/storageCleanupUtils';  // ← Listo para usar si se necesita limpiar imagenes huerfanas en carpetas
 import Dashboard from './components/Dashboard';
 import ClientList from './components/ClientList';
 import PaymentHistory from './components/PaymentHistory';
@@ -14,6 +13,7 @@ import ClientDetailPage from './components/ClientDetailPage';
 import SettingsPage from './components/SettingsPage';
 import Login from './components/Login';
 import InventoryList from './components/inventory/InventoryList';
+import LeadsPage from './components/LeadsPage';
 import AdminLayout from './components/layouts/AdminLayout';
 
 // Public Components
@@ -24,7 +24,7 @@ import VehicleDetailPage from './pages/public/VehicleDetailPage';
 import FinancingPage from './pages/public/FinancingPage';
 import ContactPage from './pages/public/ContactPage';
 
-import { Home, Users, DollarSign, Car } from 'lucide-react';
+import { Home, Users, DollarSign, Car, MessageSquare } from 'lucide-react';
 
 import { db } from './config/firebase';
 import { 
@@ -237,67 +237,6 @@ function AdminApp() {
           updateData.remainingBalance = Math.max(0, updateData.remainingBalance - paymentData.amount);
           updateData.status = updateData.remainingBalance <= 0 ? 'paid' : client.status;
         } else if (paymentData.paymentType === 'downpayment') {
-          updateData.downPaymentPaid = (updateData.downPaymentPaid || 0) + paymentData.amount;
-          updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - updateData.downPaymentPaid);
-        } else if (paymentData.paymentType === 'plates') {
-          updateData.platesPaid = (updateData.platesPaid || 0) + paymentData.amount;
-          updateData.platesPending = Math.max(0, (client.platesAmount || 0) - updateData.platesPaid);
-        }
-
-        if (paymentData.appliedToScheduledPayment && updateData.scheduledPayments) {
-          const finalScheduledPayments = updateData.scheduledPayments.map(sp => {
-            if (sp.id === paymentData.appliedToScheduledPayment) {
-              const newPaidAmount = (sp.paidAmount || 0) + paymentData.amount;
-              return {
-                ...sp,
-                paidAmount: newPaidAmount,
-                remainingAmount: Math.max(0, sp.amount - newPaidAmount),
-                payments: [...(sp.payments || []), editingPayment.id]
-              };
-            }
-            return sp;
-          });
-          
-          finalScheduledPayments.forEach(sp => {
-            sp.status = calculatePaymentStatus(sp);
-          });
-          
-          updateData.scheduledPayments = finalScheduledPayments;
-        }
-
-        await updateDoc(doc(db, 'clients', selectedClient.id), updateData);
-        
-      } else {
-        const paymentRef = await addDoc(collection(db, 'payments'), {
-          ...paymentData,
-          createdAt: new Date(),
-          createdBy: user.uid
-        });
-
-        const client = clients.find(c => c.id === selectedClient.id);
-        const updateData = {
-          lastPaymentDate: paymentData.paymentDate,
-          updatedAt: new Date()
-        };
-
-        if (paymentData.appliedToScheduledPayment) {
-          const updatedScheduledPayments = applyPaymentToScheduled(
-            client.scheduledPayments || [],
-            { ...paymentData, id: paymentRef.id }
-          );
-          
-          updatedScheduledPayments.forEach(sp => {
-            sp.status = calculatePaymentStatus(sp);
-          });
-          
-          updateData.scheduledPayments = updatedScheduledPayments;
-        }
-
-        if (paymentData.paymentType === 'monthly') {
-          const newBalance = Math.max(0, client.remainingBalance - paymentData.amount);
-          updateData.remainingBalance = newBalance;
-          updateData.status = newBalance <= 0 ? 'paid' : client.status;
-        } else if (paymentData.paymentType === 'downpayment') {
           const newDownPaymentPaid = (client.downPaymentPaid || 0) + paymentData.amount;
           updateData.downPaymentPaid = newDownPaymentPaid;
           updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - newDownPaymentPaid);
@@ -428,7 +367,8 @@ function AdminApp() {
     { id: 'dashboard', label: 'Dashboard', icon: Home },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'payments', label: 'Pagos', icon: DollarSign },
-    { id: 'inventory', label: 'Inventario', icon: Car }
+    { id: 'inventory', label: 'Inventario', icon: Car },
+    { id: 'leads', label: 'Leads', icon: MessageSquare }
   ];
 
   if (loading) {
@@ -523,6 +463,10 @@ function AdminApp() {
 
       {currentView === 'inventory' && (
         <InventoryList />
+      )}
+
+      {currentView === 'leads' && (
+        <LeadsPage />
       )}
     </AdminLayout>
   );

@@ -1,6 +1,6 @@
 import Hero from '../../components/public/Hero';
 import FeaturedVehicles from '../../components/public/FeaturedVehicles';
-import { CheckCircle, DollarSign, Clock, Shield } from 'lucide-react';
+import { CheckCircle, DollarSign, Clock } from 'lucide-react';
 
 export default function HomePage() {
   return (
@@ -15,11 +15,11 @@ export default function HomePage() {
               ¿Por qué elegirnos?
             </h2>
             <p className="text-xl text-gray-600">
-              Más de 15 años ayudando a familias a obtener su auto ideal, sin crédito, sin ITIN, sin SSN y sin intereses. 
+              Más de 15 años ayudando a familias a obtener su auto ideal, sin crédito, sin ITIN, sin SSN y sin intereses.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
@@ -55,18 +55,6 @@ export default function HomePage() {
                 Planes de pago ajustados a tu presupuesto y sin intereses
               </p>
             </div>
-
-            <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Shield className="w-8 h-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Garantía incluida
-              </h3>
-              <p className="text-gray-600">
-                Protección en todos nuestros vehículos
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -86,7 +74,6 @@ export default function HomePage() {
             >
               Ver inventario
             </a>
-
             <a
               href="tel:5038789550"
               className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white/10 transition font-bold text-lg"

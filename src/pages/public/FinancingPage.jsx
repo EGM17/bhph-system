@@ -1,4 +1,4 @@
-import { DollarSign, CheckCircle, Clock, Shield, Users } from 'lucide-react';
+import { DollarSign, CheckCircle, Clock, Users } from 'lucide-react';
 
 export default function FinancingPage() {
   return (
@@ -17,7 +17,7 @@ export default function FinancingPage() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Beneficios */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
           <div className="bg-white rounded-xl shadow-lg p-6 text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-green-600" />
@@ -26,7 +26,7 @@ export default function FinancingPage() {
               Todos aprobados
             </h3>
             <p className="text-gray-600">
-              Sin importar tu crédito, tenemos la opción ideal para ti
+              Sin importar tu historial de crédito
             </p>
           </div>
 
@@ -53,18 +53,6 @@ export default function FinancingPage() {
               Ajustamos el pago a tu presupuesto
             </p>
           </div>
-
-          <div className="bg-white rounded-xl shadow-lg p-6 text-center">
-            <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-8 h-8 text-purple-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Garantía Incluida
-            </h3>
-            <p className="text-gray-600">
-              Protección en cada vehículo
-            </p>
-          </div>
         </div>
 
         {/* Cómo Funciona */}
@@ -72,41 +60,41 @@ export default function FinancingPage() {
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
             ¿Cómo funciona el financiamiento en casa?
           </h2>
-
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                1
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-8 h-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Elige tu nuevo auto
+                1. Visítanos
               </h3>
               <p className="text-gray-600">
-                Explora nuestro inventario y selecciona el vehículo perfecto para ti
+                Ven a nuestra oficina con tu identificación, comprobante de domicilio y referencias
               </p>
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                2
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                Completa la Solicitud
+                2. Te aprobamos
               </h3>
               <p className="text-gray-600">
-                Trae tu identificación, comprobante de domicilio y el enganche correspondiente
+                El 99% regresa a casa manejando el mismo día
               </p>
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                3
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <DollarSign className="w-8 h-8 text-yellow-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                ¡Maneja el mismo día!
+                3. Firma y maneja
               </h3>
               <p className="text-gray-600">
-                El 99.99% califica y se regresa a casa manejando en mismo día
+                Firma los documentos, cubre el enganche y sal manejando tu auto
               </p>
             </div>
           </div>
@@ -174,60 +162,71 @@ export default function FinancingPage() {
                 ¿Cuánto necesito de enganche?
               </h3>
               <p className="text-gray-600">
-                Los enganches varían según el vehículo y tu situación. Generalmente desde
-                $1,500 a $3,000. ¡Pregúntanos por opciones flexibles para dar el enganche!
+                El enganche varía según el vehículo que elijas. Generalmente oscila entre $500 y $2,000. 
+                Mientras mayor sea tu enganche, menor será tu pago mensual.
               </p>
             </div>
 
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                ¿Cuánto tiempo tarda la aprobación?
+                ¿Cuánto tiempo tardo en llevarme el auto?
               </h3>
               <p className="text-gray-600">
-                Realmente es inmediata, solo debes traer el enganche con
-                tus documentos y podrías estar manejando el mismo día.
+                ¡El mismo día! La mayoría de nuestros clientes salen manejando su auto el mismo día que nos visitan.
+                Solo necesitas traer los documentos requeridos y el enganche.
               </p>
             </div>
 
             <div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                ¿Qué pasa si me atraso en mi pago?
+                ¿Qué pasa si no tengo SSN o ITIN?
               </h3>
               <p className="text-gray-600">
-                No somos igual que un banco, hablanos para programar un arreglo de pago,
-                normalmente no cobraremos extra por esperar unos días.
+                ¡No hay problema! No requerimos SSN ni ITIN para aprobarte. Solo necesitas una identificación válida
+                de cualquier país, un comprobante de domicilio y tus referencias personales.
               </p>
             </div>
 
-                 <div>
+            <div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">
-                ¿Aceptan vehículos como enganche o cambio?
+                ¿Cobran intereses?
               </h3>
               <p className="text-gray-600">
-                Por ahora no podemos, pero seguro pronto lo haremos.
+                No, no cobramos intereses. El precio que ves es el precio final. Tu pago mensual es fijo
+                y no aumenta con el tiempo.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                ¿Puedo traer mi propio mecánico para revisar el auto?
+              </h3>
+              <p className="text-gray-600">
+                ¡Por supuesto! Estamos completamente de acuerdo en que traigas tu mecánico de confianza
+                para que revise el vehículo antes de comprarlo.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Call to Action */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-xl p-12 text-center text-white">
+        {/* CTA Final */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-xl p-8 text-center text-white">
           <h2 className="text-3xl font-bold mb-4">
-            ¿Listo para manejar un nuevo auto?
+            ¿Listo para manejar tu próximo auto?
           </h2>
-          <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
-            Visítanos hoy o llámanos para comenzar tu proceso de financiamiento
+          <p className="text-xl text-blue-100 mb-8">
+            Visítanos hoy o llámanos para más información
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <a
               href="/inventory"
-              className="inline-flex items-center justify-center px-8 py-4 bg-white text-blue-700 rounded-xl hover:bg-blue-50 transition font-bold text-lg shadow-2xl"
+              className="px-8 py-4 bg-white text-blue-700 rounded-xl hover:bg-blue-50 transition font-bold text-lg shadow-2xl"
             >
               Ver inventario
             </a>
             <a
               href="/contact"
-              className="inline-flex items-center justify-center px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white/10 transition font-bold text-lg"
+              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white/10 transition font-bold text-lg"
             >
               Contáctanos
             </a>
