@@ -34,36 +34,25 @@ import {
   deleteDoc, 
   doc, 
   getDocs,
+  getDoc,
   query,
   orderBy 
 } from 'firebase/firestore';
 
-import { generateScheduledPayments, applyPaymentToScheduled, calculatePaymentStatus } from './utils/paymentScheduler';
+import { generateScheduledPayments, calculatePaymentStatus } from './utils/paymentScheduler';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/admin/login" replace />;
-  }
-  
-  return children;
+  const { user } = useAuth();
+  return user ? children : <Navigate to="/login" />;
 }
 
 function AdminApp() {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [currentView, setCurrentView] = useState('dashboard');
   const [clients, setClients] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showClientForm, setShowClientForm] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
   const [showClientDetail, setShowClientDetail] = useState(false);
@@ -72,18 +61,15 @@ function AdminApp() {
   const [editingPayment, setEditingPayment] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedScheduledPayment, setSelectedScheduledPayment] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      loadClients();
-      loadPayments();
-    }
-  }, [user]);
+    loadClients();
+    loadPayments();
+  }, []);
 
   const loadClients = async () => {
     try {
-      const q = query(collection(db, 'clients'), orderBy('customerName', 'asc'));
+      const q = query(collection(db, 'clients'), orderBy('createdAt', 'desc'));
       const querySnapshot = await getDocs(q);
       const clientsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
@@ -91,7 +77,7 @@ function AdminApp() {
       }));
       setClients(clientsData);
     } catch (error) {
-      console.error('Error cargando clientes:', error);
+      console.error('❌ Error cargando clientes:', error);
       alert('Error al cargar los clientes');
     } finally {
       setLoading(false);
@@ -108,7 +94,7 @@ function AdminApp() {
       }));
       setPayments(paymentsData);
     } catch (error) {
-      console.error('Error cargando pagos:', error);
+      console.error('❌ Error cargando pagos:', error);
     }
   };
 
@@ -169,7 +155,7 @@ function AdminApp() {
       setShowClientForm(false);
       setEditingClient(null);
     } catch (error) {
-      console.error('Error guardando cliente:', error);
+      console.error('❌ Error guardando cliente:', error);
       alert('Error al guardar el cliente');
     }
   };
@@ -178,15 +164,16 @@ function AdminApp() {
     if (confirm('¿Estás seguro de eliminar este cliente? También se eliminarán todos sus pagos.')) {
       try {
         await deleteDoc(doc(db, 'clients', id));
-        await loadClients();
         
         const clientPayments = payments.filter(p => p.clientId === id);
         for (const payment of clientPayments) {
           await deleteDoc(doc(db, 'payments', payment.id));
         }
+        
+        await loadClients();
         await loadPayments();
       } catch (error) {
-        console.error('Error eliminando cliente:', error);
+        console.error('❌ Error eliminando cliente:', error);
         alert('Error al eliminar el cliente');
       }
     }
@@ -194,72 +181,301 @@ function AdminApp() {
 
   const handleSavePayment = async (paymentData) => {
     try {
+      console.log('\n🔵 ===== INICIANDO GUARDADO DE PAGO =====');
+      console.log('📝 Datos del pago:', paymentData);
+      
+      // Obtener cliente fresco de Firebase
+      const clientRef = doc(db, 'clients', selectedClient.id);
+      const clientSnap = await getDoc(clientRef);
+      
+      if (!clientSnap.exists()) {
+        alert('Cliente no encontrado');
+        return;
+      }
+      
+      const client = { id: clientSnap.id, ...clientSnap.data() };
+      console.log('👤 Cliente obtenido:', client.customerName);
+
+      let paymentId = editingPayment?.id;
+
+      // PASO 1: Si es edición, revertir el pago viejo
       if (editingPayment) {
+        console.log('\n🔄 PASO 1: Revirtiendo pago anterior');
         const oldPayment = payments.find(p => p.id === editingPayment.id);
-        const client = clients.find(c => c.id === selectedClient.id);
+        console.log('📋 Pago anterior:', oldPayment);
         
-        const updateData = {
-          updatedAt: new Date()
-        };
-
-        if (oldPayment.paymentType === 'monthly') {
-          updateData.remainingBalance = (client.remainingBalance || 0) + oldPayment.amount;
-        } else if (oldPayment.paymentType === 'downpayment') {
-          updateData.downPaymentPaid = Math.max(0, (client.downPaymentPaid || 0) - oldPayment.amount);
-          updateData.downPaymentPending = (client.downPayment || 0) - updateData.downPaymentPaid;
-        } else if (oldPayment.paymentType === 'plates') {
-          updateData.platesPaid = Math.max(0, (client.platesPaid || 0) - oldPayment.amount);
-          updateData.platesPending = (client.platesAmount || 0) - updateData.platesPaid;
-        }
-
-        if (oldPayment.appliedToScheduledPayment && client.scheduledPayments) {
-          const updatedScheduledPayments = client.scheduledPayments.map(sp => {
-            if (sp.id === oldPayment.appliedToScheduledPayment) {
-              const newPaidAmount = Math.max(0, (sp.paidAmount || 0) - oldPayment.amount);
-              return {
-                ...sp,
-                paidAmount: newPaidAmount,
-                remainingAmount: sp.amount - newPaidAmount,
-                payments: sp.payments.filter(pid => pid !== editingPayment.id)
-              };
-            }
-            return sp;
-          });
-          updateData.scheduledPayments = updatedScheduledPayments;
-        }
-
+        await revertPayment(client, oldPayment);
+        
+        // Actualizar el documento del pago
         await updateDoc(doc(db, 'payments', editingPayment.id), {
           ...paymentData,
           updatedAt: new Date()
         });
-
-        if (paymentData.paymentType === 'monthly') {
-          updateData.remainingBalance = Math.max(0, updateData.remainingBalance - paymentData.amount);
-          updateData.status = updateData.remainingBalance <= 0 ? 'paid' : client.status;
-        } else if (paymentData.paymentType === 'downpayment') {
-          const newDownPaymentPaid = (client.downPaymentPaid || 0) + paymentData.amount;
-          updateData.downPaymentPaid = newDownPaymentPaid;
-          updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - newDownPaymentPaid);
-        } else if (paymentData.paymentType === 'plates') {
-          const newPlatesPaid = (client.platesPaid || 0) + paymentData.amount;
-          updateData.platesPaid = newPlatesPaid;
-          updateData.platesPending = Math.max(0, (client.platesAmount || 0) - newPlatesPaid);
-        }
-
-        await updateDoc(doc(db, 'clients', selectedClient.id), updateData);
+        console.log('✅ Pago actualizado en Firebase');
+      } else {
+        // PASO 1: Crear nuevo pago
+        console.log('\n🆕 PASO 1: Creando nuevo pago');
+        const paymentDoc = await addDoc(collection(db, 'payments'), {
+          ...paymentData,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        paymentId = paymentDoc.id;
+        console.log('✅ Pago creado con ID:', paymentId);
       }
 
+      // PASO 2: Aplicar el pago
+      console.log('\n💰 PASO 2: Aplicando pago al cliente');
+      await applyPaymentToClient(client, { ...paymentData, id: paymentId });
+
+      // PASO 3: Recargar datos
+      console.log('\n🔄 PASO 3: Recargando datos');
       await loadClients();
       await loadPayments();
-      
+
+      // PASO 4: Actualizar selectedClient con datos frescos
+      const updatedClientSnap = await getDoc(clientRef);
+      if (updatedClientSnap.exists()) {
+        const updatedClient = { id: updatedClientSnap.id, ...updatedClientSnap.data() };
+        setSelectedClient(updatedClient);
+        console.log('✅ Cliente actualizado en memoria');
+      }
+
       setShowPaymentForm(false);
       setEditingPayment(null);
       setSelectedScheduledPayment(null);
       
+      console.log('🎉 ===== PAGO GUARDADO EXITOSAMENTE =====\n');
     } catch (error) {
-      console.error('Error guardando pago:', error);
+      console.error('❌ Error guardando pago:', error);
       alert('Error al guardar el pago: ' + error.message);
     }
+  };
+
+  const revertPayment = async (client, payment) => {
+    const updateData = {};
+
+    // Revertir balances según tipo
+    if (payment.paymentType === 'monthly') {
+      updateData.remainingBalance = (client.remainingBalance || client.totalBalance || 0) + payment.amount;
+      console.log(`💵 Revirtiendo balance mensual: +$${payment.amount}`);
+    } else if (payment.paymentType === 'downpayment') {
+      updateData.downPaymentPaid = Math.max(0, (client.downPaymentPaid || 0) - payment.amount);
+      updateData.downPaymentPending = (client.downPayment || 0) - updateData.downPaymentPaid;
+      console.log(`💰 Revirtiendo enganche: -$${payment.amount}`);
+    } else if (payment.paymentType === 'plates') {
+      updateData.platesPaid = Math.max(0, (client.platesPaid || 0) - payment.amount);
+      updateData.platesPending = (client.platesAmount || 0) - updateData.platesPaid;
+      console.log(`🚗 Revirtiendo placas: -$${payment.amount}`);
+    }
+
+    // Revertir en scheduled payments
+    if (payment.appliedToScheduledPayment && client.scheduledPayments) {
+      const updatedScheduledPayments = client.scheduledPayments.map(sp => {
+        if (sp.id === payment.appliedToScheduledPayment || 
+            (sp.payments && sp.payments.includes(payment.id))) {
+          const newPaidAmount = Math.max(0, (sp.paidAmount || 0) - payment.amount);
+          const newRemainingAmount = sp.amount - newPaidAmount;
+          console.log(`📅 Revirtiendo scheduled payment ${sp.concept}: $${sp.paidAmount} -> $${newPaidAmount}`);
+          return {
+            ...sp,
+            paidAmount: newPaidAmount,
+            remainingAmount: newRemainingAmount,
+            payments: (sp.payments || []).filter(pid => pid !== payment.id),
+            status: calculatePaymentStatus({
+              ...sp,
+              paidAmount: newPaidAmount,
+              remainingAmount: newRemainingAmount
+            })
+          };
+        }
+        return sp;
+      });
+      updateData.scheduledPayments = updatedScheduledPayments;
+    }
+
+    if (Object.keys(updateData).length > 0) {
+      updateData.updatedAt = new Date();
+      await updateDoc(doc(db, 'clients', client.id), updateData);
+      console.log('✅ Cliente actualizado después de revertir');
+    }
+  };
+
+  const applyPaymentToClient = async (client, paymentData) => {
+    const updateData = {};
+
+    // PAGO RÁPIDO: Distribución automática
+    if (paymentData.isQuickPayment && paymentData.paymentType === 'monthly') {
+      console.log('⚡ Aplicando pago rápido con distribución automática');
+      let remainingAmount = paymentData.amount;
+      const updatedScheduledPayments = [...(client.scheduledPayments || [])];
+
+      // 1. Enganche
+      const downpaymentPayments = updatedScheduledPayments
+        .map((sp, idx) => ({ ...sp, originalIndex: idx }))
+        .filter(sp => sp.type === 'downpayment' && sp.remainingAmount > 0)
+        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+      for (const sp of downpaymentPayments) {
+        if (remainingAmount <= 0) break;
+        const amountToApply = Math.min(remainingAmount, sp.remainingAmount);
+        const newPaidAmount = (sp.paidAmount || 0) + amountToApply;
+        const newRemainingAmount = sp.remainingAmount - amountToApply;
+        
+        updatedScheduledPayments[sp.originalIndex] = {
+          ...sp,
+          paidAmount: newPaidAmount,
+          remainingAmount: newRemainingAmount,
+          payments: [...(sp.payments || []), paymentData.id],
+          status: calculatePaymentStatus({
+            ...sp,
+            paidAmount: newPaidAmount,
+            remainingAmount: newRemainingAmount
+          })
+        };
+        
+        remainingAmount -= amountToApply;
+        updateData.downPaymentPaid = (client.downPaymentPaid || 0) + amountToApply;
+        updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - updateData.downPaymentPaid);
+        console.log(`💰 Aplicado $${amountToApply} a enganche`);
+      }
+
+      // 2. Placas
+      const platesPayments = updatedScheduledPayments
+        .map((sp, idx) => ({ ...sp, originalIndex: idx }))
+        .filter(sp => sp.type === 'plates' && sp.remainingAmount > 0)
+        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+      for (const sp of platesPayments) {
+        if (remainingAmount <= 0) break;
+        const amountToApply = Math.min(remainingAmount, sp.remainingAmount);
+        const newPaidAmount = (sp.paidAmount || 0) + amountToApply;
+        const newRemainingAmount = sp.remainingAmount - amountToApply;
+        
+        updatedScheduledPayments[sp.originalIndex] = {
+          ...sp,
+          paidAmount: newPaidAmount,
+          remainingAmount: newRemainingAmount,
+          payments: [...(sp.payments || []), paymentData.id],
+          status: calculatePaymentStatus({
+            ...sp,
+            paidAmount: newPaidAmount,
+            remainingAmount: newRemainingAmount
+          })
+        };
+        
+        remainingAmount -= amountToApply;
+        updateData.platesPaid = (client.platesPaid || 0) + amountToApply;
+        updateData.platesPending = Math.max(0, (client.platesAmount || 0) - updateData.platesPaid);
+        console.log(`🚗 Aplicado $${amountToApply} a placas`);
+      }
+
+      // 3. Mensualidades
+      const monthlyPayments = updatedScheduledPayments
+        .map((sp, idx) => ({ ...sp, originalIndex: idx }))
+        .filter(sp => sp.type === 'monthly' && sp.remainingAmount > 0)
+        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+      for (const sp of monthlyPayments) {
+        if (remainingAmount <= 0) break;
+        const amountToApply = Math.min(remainingAmount, sp.remainingAmount);
+        const newPaidAmount = (sp.paidAmount || 0) + amountToApply;
+        const newRemainingAmount = sp.remainingAmount - amountToApply;
+        
+        updatedScheduledPayments[sp.originalIndex] = {
+          ...sp,
+          paidAmount: newPaidAmount,
+          remainingAmount: newRemainingAmount,
+          payments: [...(sp.payments || []), paymentData.id],
+          status: calculatePaymentStatus({
+            ...sp,
+            paidAmount: newPaidAmount,
+            remainingAmount: newRemainingAmount
+          })
+        };
+        
+        remainingAmount -= amountToApply;
+        console.log(`💵 Aplicado $${amountToApply} a ${sp.concept}`);
+      }
+
+      updateData.scheduledPayments = updatedScheduledPayments;
+      updateData.remainingBalance = Math.max(0, (client.remainingBalance || client.totalBalance || 0) - (paymentData.amount - remainingAmount));
+      
+      const allPaid = updatedScheduledPayments.every(sp => sp.status === 'paid');
+      if (allPaid || updateData.remainingBalance === 0) {
+        updateData.status = 'paid';
+      }
+      
+      console.log(`✅ Distribución completada. Sobrante: $${remainingAmount}`);
+    }
+    // PAGO NORMAL con scheduled payment específico
+    else if (paymentData.appliedToScheduledPayment && client.scheduledPayments) {
+      console.log(`📌 Aplicando a pago programado: ${paymentData.appliedToScheduledPayment}`);
+      
+      const updatedScheduledPayments = client.scheduledPayments.map(sp => {
+        if (sp.id === paymentData.appliedToScheduledPayment) {
+          const newPaidAmount = (sp.paidAmount || 0) + paymentData.amount;
+          const newRemainingAmount = sp.amount - newPaidAmount;
+          console.log(`📅 ${sp.concept}: $${sp.paidAmount || 0} -> $${newPaidAmount}`);
+          
+          return {
+            ...sp,
+            paidAmount: newPaidAmount,
+            remainingAmount: newRemainingAmount,
+            payments: [...(sp.payments || []), paymentData.id],
+            status: calculatePaymentStatus({
+              ...sp,
+              paidAmount: newPaidAmount,
+              remainingAmount: newRemainingAmount
+            })
+          };
+        }
+        return sp;
+      });
+      
+      updateData.scheduledPayments = updatedScheduledPayments;
+
+      // Actualizar balances según tipo
+      if (paymentData.paymentType === 'monthly') {
+        const newRemainingBalance = Math.max(0, (client.remainingBalance || client.totalBalance || 0) - paymentData.amount);
+        updateData.remainingBalance = newRemainingBalance;
+        updateData.status = newRemainingBalance <= 0 ? 'paid' : client.status;
+        console.log(`💵 Balance actualizado: $${newRemainingBalance}`);
+      } else if (paymentData.paymentType === 'downpayment') {
+        const newDownPaymentPaid = (client.downPaymentPaid || 0) + paymentData.amount;
+        updateData.downPaymentPaid = newDownPaymentPaid;
+        updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - newDownPaymentPaid);
+        console.log(`💰 Enganche pagado: $${newDownPaymentPaid}`);
+      } else if (paymentData.paymentType === 'plates') {
+        const newPlatesPaid = (client.platesPaid || 0) + paymentData.amount;
+        updateData.platesPaid = newPlatesPaid;
+        updateData.platesPending = Math.max(0, (client.platesAmount || 0) - newPlatesPaid);
+        console.log(`🚗 Placas pagadas: $${newPlatesPaid}`);
+      }
+    }
+    // PAGO SIN SCHEDULED PAYMENT (caso legacy)
+    else {
+      console.log('📋 Pago sin scheduled payment específico');
+      
+      if (paymentData.paymentType === 'monthly') {
+        const newRemainingBalance = Math.max(0, (client.remainingBalance || client.totalBalance || 0) - paymentData.amount);
+        updateData.remainingBalance = newRemainingBalance;
+        updateData.status = newRemainingBalance <= 0 ? 'paid' : client.status;
+      } else if (paymentData.paymentType === 'downpayment') {
+        const newDownPaymentPaid = (client.downPaymentPaid || 0) + paymentData.amount;
+        updateData.downPaymentPaid = newDownPaymentPaid;
+        updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - newDownPaymentPaid);
+      } else if (paymentData.paymentType === 'plates') {
+        const newPlatesPaid = (client.platesPaid || 0) + paymentData.amount;
+        updateData.platesPaid = newPlatesPaid;
+        updateData.platesPending = Math.max(0, (client.platesAmount || 0) - newPlatesPaid);
+      }
+    }
+
+    updateData.updatedAt = new Date();
+    console.log('💾 Actualizando cliente en Firebase...');
+    await updateDoc(doc(db, 'clients', client.id), updateData);
+    console.log('✅ Cliente actualizado exitosamente');
   };
 
   const handleDeletePayment = async (paymentId) => {
@@ -267,53 +483,46 @@ function AdminApp() {
       const payment = payments.find(p => p.id === paymentId);
       if (!payment) return;
 
-      const client = clients.find(c => c.id === payment.clientId);
-      if (!client) return;
-
-      const updateData = {
-        updatedAt: new Date()
-      };
-
-      if (payment.paymentType === 'monthly') {
-        updateData.remainingBalance = (client.remainingBalance || 0) + payment.amount;
-        updateData.status = 'active';
-      } else if (payment.paymentType === 'downpayment') {
-        updateData.downPaymentPaid = Math.max(0, (client.downPaymentPaid || 0) - payment.amount);
-        updateData.downPaymentPending = (client.downPayment || 0) - updateData.downPaymentPaid;
-      } else if (payment.paymentType === 'plates') {
-        updateData.platesPaid = Math.max(0, (client.platesPaid || 0) - payment.amount);
-        updateData.platesPending = (client.platesAmount || 0) - updateData.platesPaid;
+      if (!confirm(`¿Estás seguro de eliminar este pago de $${payment.amount.toLocaleString()}?`)) {
+        return;
       }
 
-      if (payment.appliedToScheduledPayment && client.scheduledPayments) {
-        const updatedScheduledPayments = client.scheduledPayments.map(sp => {
-          if (sp.id === payment.appliedToScheduledPayment) {
-            const newPaidAmount = Math.max(0, (sp.paidAmount || 0) - payment.amount);
-            return {
-              ...sp,
-              paidAmount: newPaidAmount,
-              remainingAmount: sp.amount - newPaidAmount,
-              payments: (sp.payments || []).filter(pid => pid !== paymentId),
-              status: calculatePaymentStatus({
-                ...sp,
-                paidAmount: newPaidAmount,
-                remainingAmount: sp.amount - newPaidAmount
-              })
-            };
-          }
-          return sp;
-        });
-        updateData.scheduledPayments = updatedScheduledPayments;
-      }
+      console.log('\n🗑️ ===== ELIMINANDO PAGO =====');
+      console.log('📋 Pago a eliminar:', payment);
 
+      // Obtener cliente fresco
+      const clientRef = doc(db, 'clients', payment.clientId);
+      const clientSnap = await getDoc(clientRef);
+      
+      if (!clientSnap.exists()) {
+        alert('Cliente no encontrado');
+        return;
+      }
+      
+      const client = { id: clientSnap.id, ...clientSnap.data() };
+
+      // Revertir el pago
+      await revertPayment(client, payment);
+
+      // Eliminar documento de pago
       await deleteDoc(doc(db, 'payments', paymentId));
-      await updateDoc(doc(db, 'clients', client.id), updateData);
+      console.log('✅ Pago eliminado de Firebase');
 
+      // Recargar datos
       await loadClients();
       await loadPayments();
 
+      // Actualizar selectedClient si está abierto
+      if (selectedClient && selectedClient.id === client.id) {
+        const updatedClientSnap = await getDoc(clientRef);
+        if (updatedClientSnap.exists()) {
+          setSelectedClient({ id: updatedClientSnap.id, ...updatedClientSnap.data() });
+        }
+      }
+
+      console.log('🎉 ===== PAGO ELIMINADO EXITOSAMENTE =====\n');
     } catch (error) {
-      console.error('Error eliminando pago:', error);
+      console.error('❌ Error eliminando pago:', error);
       alert('Error al eliminar el pago: ' + error.message);
     }
   };
@@ -357,8 +566,16 @@ function AdminApp() {
         updatedAt: new Date()
       });
       await loadClients();
+      
+      if (selectedClient && selectedClient.id === clientId) {
+        const clientRef = doc(db, 'clients', clientId);
+        const clientSnap = await getDoc(clientRef);
+        if (clientSnap.exists()) {
+          setSelectedClient({ id: clientSnap.id, ...clientSnap.data() });
+        }
+      }
     } catch (error) {
-      console.error('Error actualizando cliente:', error);
+      console.error('❌ Error actualizando cliente:', error);
       alert('Error al actualizar el cliente');
     }
   };
@@ -451,14 +668,16 @@ function AdminApp() {
       {currentView === 'clients' && (
         <ClientList
           clients={clients}
+          onAdd={() => setShowClientForm(true)}
           onEdit={handleEditClient}
           onDelete={handleDeleteClient}
           onViewDetail={handleViewDetail}
+          onAddPayment={handleAddPayment}
         />
       )}
       
       {currentView === 'payments' && (
-        <PaymentHistory payments={payments} clients={clients} />
+        <PaymentHistory payments={payments} onEdit={handleEditPayment} onDelete={handleDeletePayment} />
       )}
 
       {currentView === 'inventory' && (
@@ -472,33 +691,30 @@ function AdminApp() {
   );
 }
 
-export default function App() {
+function App() {
   return (
     <AuthProvider>
       <SettingsProvider>
         <BrowserRouter>
           <Routes>
-            {/* Rutas Públicas */}
             <Route path="/" element={<PublicLayout />}>
               <Route index element={<HomePage />} />
               <Route path="inventory" element={<InventoryPage />} />
-              <Route path="vehicle/:id" element={<VehicleDetailPage />} />
+              <Route path="inventory/:id" element={<VehicleDetailPage />} />
               <Route path="financing" element={<FinancingPage />} />
               <Route path="contact" element={<ContactPage />} />
             </Route>
 
-            {/* Rutas de Admin */}
-            <Route path="/admin/login" element={<Login />} />
-            <Route 
-              path="/admin/*" 
+            <Route path="/login" element={<Login />} />
+            <Route
+              path="/admin"
               element={
                 <ProtectedRoute>
                   <AdminApp />
                 </ProtectedRoute>
-              } 
+              }
             />
 
-            {/* 404 */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
@@ -506,3 +722,5 @@ export default function App() {
     </AuthProvider>
   );
 }
+
+export default App;
