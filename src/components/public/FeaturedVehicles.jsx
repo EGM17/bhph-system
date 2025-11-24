@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, ArrowRight, MapPin, Gauge } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useFeaturedVehicles } from '../../hooks/usePublicVehicles';
 import { formatVehicleTitle } from '../../services/vinService';
 
@@ -106,13 +107,13 @@ export default function FeaturedVehicles() {
 
         {/* View All Button */}
         <div className="text-center">
-          <a
-            href="/inventory"
+          <Link
+            to="/inventory"
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm hover:shadow-md"
           >
             Ver todo el inventario
             <ArrowRight className="w-5 h-5" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>
@@ -127,8 +128,8 @@ function VehicleCard({ vehicle }) {
   const isCashOnly = vehicle.financingType === 'cash-only';
 
   return (
-    <a 
-      href={`/vehicle/${vehicle.id}`}
+    <Link 
+      to={`/inventory/${vehicle.id}`}
       className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-100"
     >
       {/* Image */}
@@ -235,6 +236,6 @@ function VehicleCard({ vehicle }) {
           <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition" />
         </div>
       </div>
-    </a>
+    </Link>
   );
 }

@@ -1,4 +1,5 @@
 import { ArrowRight, Gauge, MapPin, Calendar } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { formatVehicleTitle } from "../../services/vinService";
 
 export default function VehicleCard({ vehicle, featured = false }) {
@@ -8,8 +9,8 @@ export default function VehicleCard({ vehicle, featured = false }) {
   const isCashOnly = vehicle.financingType === 'cash-only';
 
   return (
-    <a 
-      href={`/vehicle/${vehicle.id}`}
+    <Link 
+      to={`/inventory/${vehicle.id}`}
       className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-100"
     >
       {/* Image Container */}
@@ -56,6 +57,15 @@ export default function VehicleCard({ vehicle, featured = false }) {
             </span>
           )}
         </div>
+
+        {/* Status Badge - Solo si está vendido */}
+        {vehicle.status === 'sold' && (
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center">
+            <span className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold text-lg">
+              VENDIDO
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Content */}
@@ -139,6 +149,6 @@ export default function VehicleCard({ vehicle, featured = false }) {
           <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition" />
         </div>
       </div>
-    </a>
+    </Link>
   );
 }
