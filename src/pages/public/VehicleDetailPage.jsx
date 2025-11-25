@@ -18,6 +18,7 @@ export default function VehicleDetailPage() {
     message: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showCopiedMessage, setShowCopiedMessage] = useState(false);
 
   // Scroll to top cuando se carga la página
   useEffect(() => {
@@ -27,7 +28,8 @@ export default function VehicleDetailPage() {
   const handleShare = () => {
     const url = window.location.href;
     navigator.clipboard.writeText(url).then(() => {
-      alert('¡Enlace copiado al portapapeles!');
+      setShowCopiedMessage(true);
+      setTimeout(() => setShowCopiedMessage(false), 3000);
     }).catch(() => {
       alert('No se pudo copiar el enlace');
     });
@@ -138,6 +140,16 @@ export default function VehicleDetailPage() {
                 >
                   <Share2 className="w-5 h-5 text-gray-600" />
                 </button>
+
+                {/* Mensaje de Confirmación */}
+                {showCopiedMessage && (
+                  <div className="absolute top-16 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in">
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm font-medium">¡Enlace copiado!</span>
+                  </div>
+                )}
               </div>
 
               {/* Thumbnails */}
