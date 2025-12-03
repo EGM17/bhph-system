@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MapPin, Phone, Mail, Clock, Send } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { MapPin, Phone, Mail, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { createLead } from '../../services/leadService';
 
 export default function ContactPage() {
@@ -12,10 +12,32 @@ export default function ContactPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState(false);
+  const errorMessageRef = useRef(null);
+
+  // Check if form was just submitted (after page reload)
+  useEffect(() => {
+    const wasSubmitted = sessionStorage.getItem('contactFormSubmitted');
+    if (wasSubmitted === 'true') {
+      sessionStorage.removeItem('contactFormSubmitted');
+      setSubmitted(true);
+      setTimeout(() => setSubmitted(false), 8000);
+      // Scroll to top to show success message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, []);
+
+  // Auto-scroll to error message when it appears
+  useEffect(() => {
+    if (error && errorMessageRef.current) {
+      errorMessageRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [error]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setError(false);
 
     try {
       await createLead({
@@ -23,19 +45,15 @@ export default function ContactPage() {
         source: 'contact_page'
       });
 
-      setSubmitted(true);
-      setFormData({
-        name: '',
-        email: '',
-        phone: '',
-        message: '',
-        preferredContact: 'phone'
-      });
-
-      setTimeout(() => setSubmitted(false), 5000);
+      // Store success flag in sessionStorage before reload
+      sessionStorage.setItem('contactFormSubmitted', 'true');
+      
+      // Reload page to avoid Google Translate DOM conflicts
+      window.location.reload();
     } catch (error) {
-      alert('Error al enviar el formulario. Por favor intenta de nuevo.');
-    } finally {
+      console.error('Error submitting contact form:', error);
+      setError(true);
+      setTimeout(() => setError(false), 8000);
       setSubmitting(false);
     }
   };
@@ -55,6 +73,23 @@ export default function ContactPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Success message at top of page */}
+        {submitted && (
+          <div className="mb-8 bg-green-50 border border-green-200 rounded-lg p-6 shadow-lg">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+              <div>
+                <p className="text-green-900 font-bold text-lg">
+                  ¡Gracias por tu mensaje!
+                </p>
+                <p className="text-green-700 mt-1">
+                  Nos pondremos en contacto contigo pronto.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Información de Contacto */}
           <div className="lg:col-span-1 space-y-6">
@@ -86,74 +121,66 @@ export default function ContactPage() {
                   <MapPin className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-1">Ubicación</h3>
+                  <h3 className="font-bold text-gray-900 mb-1">Dirección</h3>
+                  <p className="text-gray-700">
+                    915 12th St SE<br />
+                    Salem, OR 97302
+                  </p>
                   <a
                     href="https://maps.google.com/?q=915+12th+St+SE+Salem+OR+97302"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-700"
+                    className="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block"
                   >
-                    915 12th St SE<br />
-                    Salem, OR 97302
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="bg-white rounded-xl shadow-lg p-6">
-              <div className="flex items-start gap-4">
-                <div className="bg-yellow-100 p-3 rounded-lg">
-                  <Mail className="w-6 h-6 text-yellow-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 mb-1">Email</h3>
-                  <a
-                    href="mailto:info@elcompaguero.com"
-                    className="text-blue-600 hover:text-blue-700"
-                  >
-                    info@elcompagueroautosales.com
+                    Ver en Google Maps →
                   </a>
                 </div>
               </div>
             </div>
 
             {/* Horario */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-6 border-2 border-blue-200">
+            <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-start gap-4">
-                <Clock className="w-6 h-6 text-blue-600 flex-shrink-0" />
+                <div className="bg-purple-100 p-3 rounded-lg">
+                  <Clock className="w-6 h-6 text-purple-600" />
+                </div>
                 <div>
-                  <h3 className="font-bold text-blue-900 mb-3">Horario</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-blue-800">Lunes - Domingo:</span>
-                      <span className="font-medium text-blue-900">10 AM - 7 PM</span>
-                    </div>
+                  <h3 className="font-bold text-gray-900 mb-2">Horario</h3>
+                  <div className="space-y-1 text-gray-700">
+                    <p>Lunes - Viernes: 10AM - 7PM</p>
+                    <p>Sábado - Domingo: 10AM - 7PM</p>
                   </div>
                 </div>
               </div>
             </div>
-
-            <div className="bg-blue-600 text-white rounded-xl p-6 text-center">
-              <p className="text-xl font-bold mb-2">¡Hablamos ingles y español!</p>
-              <p className="text-blue-100">
-                Atención personalizada en tu idioma
-              </p>
-            </div>
           </div>
 
-          {/* Formulario */}
+          {/* Formulario de Contacto */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Envíanos un Mensaje
-              </h2>
-
-              {submitted && (
-                <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded">
-                  <p className="text-green-800 font-medium">
-                    ✓ ¡Mensaje enviado! Nos pondremos en contacto contigo pronto.
+              <div className="flex items-center gap-3 mb-6">
+                <Mail className="w-8 h-8 text-blue-600" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Envíanos un Mensaje
+                  </h2>
+                  <p className="text-gray-600">
+                    Te responderemos lo antes posible
                   </p>
+                </div>
+              </div>
+
+              {error && (
+                <div 
+                  ref={errorMessageRef}
+                  className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                    <p className="text-red-800 font-medium">
+                      Error al enviar el formulario. Por favor intenta de nuevo.
+                    </p>
+                  </div>
                 </div>
               )}
 
@@ -170,6 +197,7 @@ export default function ContactPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       placeholder="Juan Pérez"
                       required
+                      disabled={submitting}
                     />
                   </div>
 
@@ -184,6 +212,7 @@ export default function ContactPage() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                       placeholder="555-123-4567"
                       required
+                      disabled={submitting}
                     />
                   </div>
                 </div>
@@ -198,6 +227,7 @@ export default function ContactPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="tu@email.com"
+                    disabled={submitting}
                   />
                 </div>
 
@@ -214,6 +244,7 @@ export default function ContactPage() {
                         checked={formData.preferredContact === 'phone'}
                         onChange={(e) => setFormData({ ...formData, preferredContact: e.target.value })}
                         className="w-4 h-4 text-blue-600"
+                        disabled={submitting}
                       />
                       <span className="text-gray-700">Teléfono</span>
                     </label>
@@ -225,6 +256,7 @@ export default function ContactPage() {
                         checked={formData.preferredContact === 'email'}
                         onChange={(e) => setFormData({ ...formData, preferredContact: e.target.value })}
                         className="w-4 h-4 text-blue-600"
+                        disabled={submitting}
                       />
                       <span className="text-gray-700">Email</span>
                     </label>
@@ -242,6 +274,7 @@ export default function ContactPage() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="¿En qué podemos ayudarte?"
                     required
+                    disabled={submitting}
                   />
                 </div>
 
