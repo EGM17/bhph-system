@@ -56,7 +56,7 @@ export default function Hero() {
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a
-                href="/apply"
+                href="/contact"
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition font-semibold"
               >
                 Aplicar para financiamiento

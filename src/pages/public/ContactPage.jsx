@@ -162,7 +162,7 @@ export default function ContactPage() {
                 <Mail className="w-8 h-8 text-blue-600" />
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">
-                    Envíanos un Mensaje
+                    Envíanos un mensaje
                   </h2>
                   <p className="text-gray-600">
                     Te responderemos lo antes posible
@@ -188,7 +188,7 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre Completo *
+                      Nombre completo *
                     </label>
                     <input
                       type="text"
@@ -233,7 +233,7 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Método de Contacto Preferido *
+                    Método de contacto preferido *
                   </label>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -288,7 +288,7 @@ export default function ContactPage() {
                   ) : (
                     <>
                       <Send className="w-5 h-5" />
-                      Enviar Mensaje
+                      Enviar mensaje
                     </>
                   )}
                 </button>
