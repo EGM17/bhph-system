@@ -7,6 +7,8 @@ import { formatVehicleTitle } from '../../services/vinService';
 export default function FeaturedVehicles() {
   const { vehicles, loading } = useFeaturedVehicles(6);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState(0);
+  const [touchEnd, setTouchEnd] = useState(0);
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % vehicles.length);
@@ -14,6 +16,34 @@ export default function FeaturedVehicles() {
 
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev - 1 + vehicles.length) % vehicles.length);
+  };
+
+  // Manejar swipe touch
+  const handleTouchStart = (e) => {
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+    
+    if (isLeftSwipe) {
+      nextSlide();
+    }
+    if (isRightSwipe) {
+      prevSlide();
+    }
+    
+    // Reset
+    setTouchStart(0);
+    setTouchEnd(0);
   };
 
   if (loading) {
@@ -34,21 +64,21 @@ export default function FeaturedVehicles() {
   }
 
   return (
-    <section className="py-20 bg-gray-50">
+    <section className="py-12 md:py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header - Diseño Limpio */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-8 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full mb-4">
             <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
             <span className="text-sm font-semibold text-blue-700 tracking-wide uppercase">
               Destacados
             </span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
+          <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
             Vehículos destacados
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
             Nuestra selección de vehículos más populares con las mejores condiciones
           </p>
         </div>
@@ -61,8 +91,13 @@ export default function FeaturedVehicles() {
         </div>
 
         {/* Mobile Carousel */}
-        <div className="md:hidden relative mb-12">
-          <div className="overflow-hidden rounded-xl">
+        <div className="md:hidden relative mb-8 md:mb-12">
+          <div 
+            className="overflow-hidden rounded-xl"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
             <div 
               className="flex transition-transform duration-500 ease-out"
               style={{ transform: `translateX(-${currentIndex * 100}%)` }}
@@ -171,7 +206,7 @@ function VehicleCard({ vehicle }) {
 
       {/* Content */}
       <div className="p-5">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition line-clamp-2">
+        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition line-clamp-2">
           {title}
         </h3>
 
@@ -195,7 +230,7 @@ function VehicleCard({ vehicle }) {
           vehicle.showMonthlyPayment !== false && vehicle.monthlyPaymentFrom ? (
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-xl md:text-2xl font-bold text-gray-900">
                   ${vehicle.monthlyPaymentFrom}
                 </span>
                 <span className="text-sm text-gray-500 font-medium">/mes</span>
@@ -213,7 +248,7 @@ function VehicleCard({ vehicle }) {
           vehicle.showPrice !== false && vehicle.price ? (
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-xl md:text-2xl font-bold text-gray-900">
                   ${vehicle.price?.toLocaleString()}
                 </span>
               </div>
