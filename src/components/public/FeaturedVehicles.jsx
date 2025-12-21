@@ -78,7 +78,7 @@ export default function FeaturedVehicles() {
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
             Vehículos destacados
           </h2>
-          <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base md:text-lg lg:text-lg text-gray-600 max-w-2xl mx-auto px-6">
             Nuestra selección de vehículos más populares con las mejores condiciones
           </p>
         </div>

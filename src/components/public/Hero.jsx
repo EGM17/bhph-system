@@ -22,7 +22,7 @@ export default function Hero() {
                 - Móvil: aspect-[5/4] (más horizontal, altura = 80% del ancho)
                 - Desktop: aspect-square (perfectamente cuadrada, 100% del ancho)
             */}
-            <div className="relative z-10 rounded-3xl overflow-hidden shadow-2xl aspect-[5/4] lg:aspect-square"
+            <div className="relative z-10 rounded-3xl overflow-hidden aspect-[5/4] lg:aspect-square"
                  style={{ 
                    backgroundColor: settings.heroImage ? 'transparent' : 'rgba(59, 130, 246, 0.15)' 
                  }}>
@@ -42,10 +42,6 @@ export default function Hero() {
                 </div>
               )}
             </div>
-            
-            {/* Elementos decorativos */}
-            <div className="absolute -top-6 -right-6 w-24 h-24 bg-yellow-400/20 rounded-full blur-2xl -z-10"></div>
-            <div className="absolute -bottom-6 -left-6 w-32 h-32 bg-blue-400/20 rounded-full blur-2xl -z-10"></div>
           </div>
 
           {/* Left Content - TEXTO (Se muestra SEGUNDO en móvil con order-2, PRIMERO en desktop sin order) */}
