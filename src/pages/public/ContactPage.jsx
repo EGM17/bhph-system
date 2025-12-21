@@ -63,10 +63,10 @@ export default function ContactPage() {
       {/* Hero */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 px-4">
             Contáctanos
           </h1>
-          <p className="text-xl text-blue-100">
+          <p className="text-base md:text-xl text-blue-100 px-4">
             Estamos aquí para ayudarte. ¡Llama ahora o envíanos mensaje!
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function ContactPage() {
                   <Phone className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-1">Teléfono</h3>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">Teléfono</h3>
                   <a
                     href="tel:5038789550"
                     className="text-blue-600 hover:text-blue-700 text-lg font-medium"
@@ -121,7 +121,7 @@ export default function ContactPage() {
                   <MapPin className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-1">Dirección</h3>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">Dirección</h3>
                   <p className="text-gray-700">
                     915 12th St SE<br />
                     Salem, OR 97302
@@ -145,7 +145,7 @@ export default function ContactPage() {
                   <Clock className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 mb-2">Horario</h3>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2">Horario</h3>
                   <div className="space-y-1 text-gray-700">
                     <p>Lunes - Viernes: 10AM - 7PM</p>
                     <p>Sábado - Domingo: 10AM - 7PM</p>
@@ -161,10 +161,10 @@ export default function ContactPage() {
               <div className="flex items-center gap-3 mb-6">
                 <Mail className="w-8 h-8 text-blue-600" />
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900">
                     Envíanos un mensaje
                   </h2>
-                  <p className="text-gray-600">
+                  <p className="text-sm md:text-base text-gray-600">
                     Te responderemos lo antes posible
                   </p>
                 </div>
@@ -281,7 +281,7 @@ export default function ContactPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition font-bold text-lg shadow-lg"
+                  className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition font-bold text-base md:text-lg shadow-lg"
                 >
                   {submitting ? (
                     <>Enviando...</>
