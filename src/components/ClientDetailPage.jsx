@@ -4,6 +4,9 @@ import PaymentSchedule from './PaymentSchedule';
 import ContractGenerator from './contracts/ContractGenerator';
 import { generateScheduledPayments } from '../utils/paymentScheduler';
 import { useSettings } from '../context/SettingsContext';
+// ⬅️ NUEVO: Imports para caché
+import { cacheService } from '../services/cacheService';
+import { getClientPayments } from '../services/paymentService';
 
 export default function ClientDetailPage({ client: initialClient, payments, onClose, onUpdateClient, onAddPayment, onEditPayment, onDeletePayment }) {
   const [activeTab, setActiveTab] = useState('schedule');
@@ -48,6 +51,7 @@ export default function ClientDetailPage({ client: initialClient, payments, onCl
     }
   }, [client]);
 
+  // ⬅️ MODIFICADO: Usar pagos con caché
   const clientPayments = payments.filter(p => p.clientId === client.id);
   const totalPaid = clientPayments.reduce((sum, p) => sum + p.amount, 0);
   const monthlyPayments = scheduledPayments.filter(p => p.type === 'monthly');

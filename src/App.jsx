@@ -41,6 +41,11 @@ import {
 
 import { generateScheduledPayments, calculatePaymentStatus } from './utils/paymentScheduler';
 
+// ⬅️ NUEVO: Importar servicios con caché
+import { cacheService } from './services/cacheService';
+import { getAllClients } from './services/clientService';
+import { getAllPayments, deleteAllClientPayments } from './services/paymentService';
+
 // Protected Route Component
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -62,19 +67,26 @@ function AdminApp() {
   const [selectedClient, setSelectedClient] = useState(null);
   const [selectedScheduledPayment, setSelectedScheduledPayment] = useState(null);
 
+  // ⬅️ NUEVO: Cargar datos inicial con caché
   useEffect(() => {
     loadClients();
     loadPayments();
+
+    // ⬅️ NUEVO: Suscribirse a invalidaciones de caché
+    const unsubscribe = cacheService.subscribe((type) => {
+      console.log(`🔄 Caché invalidada (${type}), recargando datos...`);
+      loadClients(true); // forceRefresh
+      loadPayments(true); // forceRefresh
+    }, 'payment');
+
+    return () => unsubscribe();
   }, []);
 
-  const loadClients = async () => {
+  // ⬅️ MODIFICADO: Función para cargar clientes con caché
+  const loadClients = async (forceRefresh = false) => {
     try {
-      const q = query(collection(db, 'clients'), orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const clientsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      console.log(forceRefresh ? '🔄 Forzando recarga de clientes...' : '📖 Cargando clientes...');
+      const clientsData = await getAllClients(forceRefresh);
       setClients(clientsData);
     } catch (error) {
       console.error('❌ Error cargando clientes:', error);
@@ -84,14 +96,11 @@ function AdminApp() {
     }
   };
 
-  const loadPayments = async () => {
+  // ⬅️ MODIFICADO: Función para cargar pagos con caché
+  const loadPayments = async (forceRefresh = false) => {
     try {
-      const q = query(collection(db, 'payments'), orderBy('paymentDate', 'desc'));
-      const querySnapshot = await getDocs(q);
-      const paymentsData = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      console.log(forceRefresh ? '🔄 Forzando recarga de pagos...' : '📖 Cargando pagos...');
+      const paymentsData = await getAllPayments(forceRefresh);
       setPayments(paymentsData);
     } catch (error) {
       console.error('❌ Error cargando pagos:', error);
@@ -140,6 +149,9 @@ function AdminApp() {
         }
 
         await updateDoc(doc(db, 'clients', editingClient.id), updateData);
+        
+        // ⬅️ NUEVO: Invalidar caché manualmente (por si acaso)
+        cacheService.invalidatePaymentCache();
       } else {
         const scheduledPayments = generateScheduledPayments(clientData);
         
@@ -149,9 +161,13 @@ function AdminApp() {
           createdAt: new Date(),
           updatedAt: new Date()
         });
+        
+        // ⬅️ NUEVO: Invalidar caché manualmente
+        cacheService.invalidatePaymentCache();
       }
       
-      await loadClients();
+      // ⬅️ MODIFICADO: Recargar con forceRefresh
+      await loadClients(true);
       setShowClientForm(false);
       setEditingClient(null);
     } catch (error) {
@@ -163,15 +179,18 @@ function AdminApp() {
   const handleDeleteClient = async (id) => {
     if (confirm('¿Estás seguro de eliminar este cliente? También se eliminarán todos sus pagos.')) {
       try {
+        // Eliminar cliente
         await deleteDoc(doc(db, 'clients', id));
         
-        const clientPayments = payments.filter(p => p.clientId === id);
-        for (const payment of clientPayments) {
-          await deleteDoc(doc(db, 'payments', payment.id));
-        }
+        // Eliminar todos sus pagos
+        await deleteAllClientPayments(id);
         
-        await loadClients();
-        await loadPayments();
+        // ⬅️ NUEVO: Invalidar caché
+        cacheService.invalidatePaymentCache();
+        
+        // ⬅️ MODIFICADO: Recargar con forceRefresh
+        await loadClients(true);
+        await loadPayments(true);
       } catch (error) {
         console.error('❌ Error eliminando cliente:', error);
         alert('Error al eliminar el cliente');
@@ -228,24 +247,23 @@ function AdminApp() {
       console.log('\n💰 PASO 2: Aplicando pago al cliente');
       await applyPaymentToClient(client, { ...paymentData, id: paymentId });
 
-      // PASO 3: Recargar datos
+      // ⬅️ NUEVO: Invalidar caché
+      cacheService.invalidatePaymentCache();
+
+      // PASO 3: Recargar datos con forceRefresh
       console.log('\n🔄 PASO 3: Recargando datos');
-      await loadClients();
-      await loadPayments();
+      await loadClients(true);
+      await loadPayments(true);
 
       // PASO 4: Actualizar selectedClient con datos frescos
       const updatedClientSnap = await getDoc(clientRef);
       if (updatedClientSnap.exists()) {
-        const updatedClient = { id: updatedClientSnap.id, ...updatedClientSnap.data() };
-        setSelectedClient(updatedClient);
-        console.log('✅ Cliente actualizado en memoria');
+        setSelectedClient({ id: updatedClientSnap.id, ...updatedClientSnap.data() });
       }
 
       setShowPaymentForm(false);
       setEditingPayment(null);
       setSelectedScheduledPayment(null);
-      
-      console.log('🎉 ===== PAGO GUARDADO EXITOSAMENTE =====\n');
     } catch (error) {
       console.error('❌ Error guardando pago:', error);
       alert('Error al guardar el pago: ' + error.message);
@@ -253,227 +271,115 @@ function AdminApp() {
   };
 
   const revertPayment = async (client, payment) => {
-    console.log('\n🔙 ===== INICIANDO REVERSIÓN DE PAGO =====');
-    console.log('Tipo de pago:', payment.paymentType);
-    console.log('Monto:', payment.amount);
-    console.log('ID del pago:', payment.id);
-    console.log('Distribución guardada:', payment.distribution);
+    console.log('\n🔄 ===== REVIRTIENDO PAGO =====');
     
     const updateData = {};
     
-    let revertedFromDownpayment = 0;
-    let revertedFromPlates = 0;
-    let revertedFromMonthly = 0;
-
-    if (client.scheduledPayments) {
-      const updatedScheduledPayments = client.scheduledPayments.map(sp => {
-        const hasPaymentInArray = sp.payments && sp.payments.includes(payment.id);
-        const matchesId = sp.id === payment.appliedToScheduledPayment;
-        
-        if (hasPaymentInArray || matchesId) {
-          let amountToRevert = 0;
-          
-          // 🆕 USAR LA DISTRIBUCIÓN SI EXISTE
-          if (payment.distribution && Array.isArray(payment.distribution)) {
-            const distributionItem = payment.distribution.find(d => d.scheduledPaymentId === sp.id);
-            if (distributionItem) {
-              amountToRevert = distributionItem.amount;
-              console.log(`📊 Usando distribución guardada: $${amountToRevert} para ${sp.concept}`);
-            }
-          }
-          
-          // Fallback si no hay distribución
-          if (amountToRevert === 0) {
-            if (hasPaymentInArray) {
-              if (sp.payments.length === 1 && sp.payments[0] === payment.id) {
-                amountToRevert = Math.min(payment.amount, sp.paidAmount || 0);
-              } else {
-                amountToRevert = Math.min(payment.amount, sp.paidAmount || 0);
-              }
-            } else if (matchesId) {
-              amountToRevert = Math.min(payment.amount, sp.paidAmount || 0);
-            }
-          }
-          
-          const newPaidAmount = Math.max(0, (sp.paidAmount || 0) - amountToRevert);
-          const newRemainingAmount = sp.amount - newPaidAmount;
-          
-          console.log(`📅 Revirtiendo ${sp.concept}: $${sp.paidAmount} -> $${newPaidAmount}`);
-          
-          if (sp.type === 'downpayment') revertedFromDownpayment += amountToRevert;
-          else if (sp.type === 'plates') revertedFromPlates += amountToRevert;
-          else if (sp.type === 'monthly') revertedFromMonthly += amountToRevert;
-          
+    if (payment.distribution) {
+      const { appliedToDownPayment, appliedToPlates, appliedToMonthly } = payment.distribution;
+      
+      if (appliedToDownPayment > 0) {
+        updateData.downPaymentPaid = Math.max(0, (client.downPaymentPaid || 0) - appliedToDownPayment);
+        updateData.downPaymentPending = Math.max(0, (client.downPayment || 0) - updateData.downPaymentPaid);
+        console.log(`   📤 Enganche: -${appliedToDownPayment}`);
+      }
+      
+      if (appliedToPlates > 0) {
+        updateData.platesPaid = Math.max(0, (client.platesPaid || 0) - appliedToPlates);
+        updateData.platesPending = Math.max(0, (client.platesAmount || 0) - updateData.platesPaid);
+        console.log(`   📤 Placas: -${appliedToPlates}`);
+      }
+      
+      if (appliedToMonthly > 0) {
+        updateData.remainingBalance = Math.min(
+          client.totalBalance || client.remainingBalance || 0,
+          (client.remainingBalance || 0) + appliedToMonthly
+        );
+        console.log(`   📤 Balance: +${appliedToMonthly}`);
+      }
+    }
+    
+    if (client.scheduledPayments && payment.appliedToScheduledPayment) {
+      updateData.scheduledPayments = client.scheduledPayments.map(sp => {
+        if (sp.id === payment.appliedToScheduledPayment) {
+          const newPaidAmount = Math.max(0, (sp.paidAmount || 0) - payment.amount);
           return {
             ...sp,
             paidAmount: newPaidAmount,
-            remainingAmount: newRemainingAmount,
-            payments: (sp.payments || []).filter(pid => pid !== payment.id),
-            status: calculatePaymentStatus({ ...sp, paidAmount: newPaidAmount, remainingAmount: newRemainingAmount })
+            remainingAmount: sp.amount - newPaidAmount,
+            payments: (sp.payments || []).filter(p => p.paymentId !== payment.id),
+            status: calculatePaymentStatus({ ...sp, paidAmount: newPaidAmount, remainingAmount: sp.amount - newPaidAmount })
           };
         }
         return sp;
       });
-      
-      updateData.scheduledPayments = updatedScheduledPayments;
-    }
-
-    console.log(`\n💰 Revertidos: Enganche $${revertedFromDownpayment}, Placas $${revertedFromPlates}, Mensual $${revertedFromMonthly}`);
-
-    if (revertedFromDownpayment > 0) {
-      updateData.downPaymentPaid = Math.max(0, (client.downPaymentPaid || 0) - revertedFromDownpayment);
-      updateData.downPaymentPending = (client.downPayment || 0) - updateData.downPaymentPaid;
-    }
-    
-    if (revertedFromPlates > 0) {
-      updateData.platesPaid = Math.max(0, (client.platesPaid || 0) - revertedFromPlates);
-      updateData.platesPending = (client.platesAmount || 0) - updateData.platesPaid;
-    }
-    
-    if (revertedFromMonthly > 0) {
-      updateData.remainingBalance = (client.remainingBalance || client.totalBalance || 0) + revertedFromMonthly;
     }
 
     if (Object.keys(updateData).length > 0) {
       updateData.updatedAt = new Date();
       await updateDoc(doc(db, 'clients', client.id), updateData);
-      console.log('✅ Cliente actualizado');
+      console.log('✅ Cliente actualizado después de revertir\n');
     }
-    
-    console.log('🎉 REVERSIÓN COMPLETADA\n');
   };
 
-  const applyPaymentToClient = async (client, paymentData) => {
-    console.log('\n💰 ===== APLICANDO PAGO =====');
-    console.log(`Tipo: ${paymentData.paymentType}, Monto: $${paymentData.amount}`);
+  const applyPaymentToClient = async (freshClient, paymentData) => {
+    console.log('💰 ===== APLICANDO PAGO AL CLIENTE =====');
     
     const updateData = {};
-    const clientRef = doc(db, 'clients', client.id);
-    const clientSnap = await getDoc(clientRef);
-    const freshClient = { id: clientSnap.id, ...clientSnap.data() };
-    
-    let appliedToDownpayment = 0;
-    let appliedToPlates = 0;
-    let appliedToMonthly = 0;
-    const paymentDistribution = [];
+    let remainingAmount = paymentData.amount;
+    const paymentDistribution = { appliedToDownPayment: 0, appliedToPlates: 0, appliedToMonthly: 0 };
 
-    if (paymentData.appliedToScheduledPayment) {
-      const updatedScheduledPayments = [...(freshClient.scheduledPayments || [])];
-      const targetPayment = updatedScheduledPayments.find(sp => sp.id === paymentData.appliedToScheduledPayment);
-      
-      if (targetPayment) {
-        const newPaidAmount = (targetPayment.paidAmount || 0) + paymentData.amount;
-        const newRemainingAmount = Math.max(0, targetPayment.amount - newPaidAmount);
-        
-        targetPayment.paidAmount = newPaidAmount;
-        targetPayment.remainingAmount = newRemainingAmount;
-        
-        if (!targetPayment.payments) targetPayment.payments = [];
-        if (!targetPayment.payments.includes(paymentData.id)) {
-          targetPayment.payments.push(paymentData.id);
-        }
-        
-        targetPayment.status = calculatePaymentStatus(targetPayment);
-        
-        if (targetPayment.type === 'downpayment') appliedToDownpayment = paymentData.amount;
-        else if (targetPayment.type === 'plates') appliedToPlates = paymentData.amount;
-        else if (targetPayment.type === 'monthly') appliedToMonthly = paymentData.amount;
-        
-        paymentDistribution.push({
-          scheduledPaymentId: targetPayment.id,
-          type: targetPayment.type,
-          amount: paymentData.amount
-        });
-        
-        updateData.scheduledPayments = updatedScheduledPayments;
-      }
-    } else {
-      const updatedScheduledPayments = [...(freshClient.scheduledPayments || [])];
-      let remainingAmount = paymentData.amount;
-      
-      let targetPayments = [];
-      if (paymentData.paymentType === 'downpayment') {
-        targetPayments = updatedScheduledPayments
-          .filter(sp => sp.type === 'downpayment' && sp.remainingAmount > 0)
-          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-      } else if (paymentData.paymentType === 'plates') {
-        targetPayments = updatedScheduledPayments
-          .filter(sp => sp.type === 'plates' && sp.remainingAmount > 0)
-          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-      } else if (paymentData.paymentType === 'monthly') {
-        targetPayments = updatedScheduledPayments
-          .filter(sp => sp.type === 'monthly' && sp.remainingAmount > 0)
-          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-      }
-      
-      for (const sp of targetPayments) {
-        if (remainingAmount <= 0) break;
-        
-        const amountToApply = Math.min(remainingAmount, sp.remainingAmount);
-        sp.paidAmount = (sp.paidAmount || 0) + amountToApply;
-        sp.remainingAmount = sp.amount - sp.paidAmount;
-        
-        if (!sp.payments) sp.payments = [];
-        if (!sp.payments.includes(paymentData.id)) sp.payments.push(paymentData.id);
-        
-        sp.status = calculatePaymentStatus(sp);
-        
-        if (sp.type === 'downpayment') appliedToDownpayment += amountToApply;
-        else if (sp.type === 'plates') appliedToPlates += amountToApply;
-        else if (sp.type === 'monthly') appliedToMonthly += amountToApply;
-        
-        paymentDistribution.push({
-          scheduledPaymentId: sp.id,
-          type: sp.type,
-          amount: amountToApply
-        });
-        
-        remainingAmount -= amountToApply;
-      }
-      
-      if (remainingAmount > 0) {
-        const nextPayments = updatedScheduledPayments
-          .filter(sp => sp.remainingAmount > 0 && !targetPayments.includes(sp))
-          .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-        
-        for (const sp of nextPayments) {
-          if (remainingAmount <= 0) break;
-          
-          const toApply = Math.min(remainingAmount, sp.remainingAmount);
-          sp.paidAmount = (sp.paidAmount || 0) + toApply;
-          sp.remainingAmount = sp.amount - sp.paidAmount;
-          
-          if (!sp.payments) sp.payments = [];
-          if (!sp.payments.includes(paymentData.id)) sp.payments.push(paymentData.id);
-          
-          sp.status = calculatePaymentStatus(sp);
-          
-          if (sp.type === 'downpayment') appliedToDownpayment += toApply;
-          else if (sp.type === 'plates') appliedToPlates += toApply;
-          else if (sp.type === 'monthly') appliedToMonthly += toApply;
-          
-          paymentDistribution.push({
-            scheduledPaymentId: sp.id,
-            type: sp.type,
-            amount: toApply
-          });
-          
-          remainingAmount -= toApply;
-        }
-      }
-      
-      updateData.scheduledPayments = updatedScheduledPayments;
+    // 1. Enganche pendiente
+    if (freshClient.downPaymentPending > 0 && remainingAmount > 0) {
+      const appliedToDownPayment = Math.min(remainingAmount, freshClient.downPaymentPending);
+      updateData.downPaymentPaid = (freshClient.downPaymentPaid || 0) + appliedToDownPayment;
+      updateData.downPaymentPending = Math.max(0, freshClient.downPaymentPending - appliedToDownPayment);
+      remainingAmount -= appliedToDownPayment;
+      paymentDistribution.appliedToDownPayment = appliedToDownPayment;
+      console.log(`   ✅ Aplicado a enganche: ${appliedToDownPayment}`);
     }
 
-    console.log(`💰 Aplicados: Enganche $${appliedToDownpayment}, Placas $${appliedToPlates}, Mensual $${appliedToMonthly}`);
+    // 2. Placas pendientes
+    if (freshClient.platesPending > 0 && remainingAmount > 0) {
+      const appliedToPlates = Math.min(remainingAmount, freshClient.platesPending);
+      updateData.platesPaid = (freshClient.platesPaid || 0) + appliedToPlates;
+      updateData.platesPending = Math.max(0, freshClient.platesPending - appliedToPlates);
+      remainingAmount -= appliedToPlates;
+      paymentDistribution.appliedToPlates = appliedToPlates;
+      console.log(`   ✅ Aplicado a placas: ${appliedToPlates}`);
+    }
 
-    if (appliedToDownpayment > 0) {
-      updateData.downPaymentPaid = (freshClient.downPaymentPaid || 0) + appliedToDownpayment;
+    // 3. Mensualidades
+    const appliedToMonthly = remainingAmount;
+    paymentDistribution.appliedToMonthly = appliedToMonthly;
+
+    if (paymentData.appliedToScheduledPayment && freshClient.scheduledPayments) {
+      updateData.scheduledPayments = freshClient.scheduledPayments.map(sp => {
+        if (sp.id === paymentData.appliedToScheduledPayment) {
+          const newPaidAmount = (sp.paidAmount || 0) + appliedToMonthly;
+          const newRemainingAmount = Math.max(0, sp.amount - newPaidAmount);
+          return {
+            ...sp,
+            paidAmount: newPaidAmount,
+            remainingAmount: newRemainingAmount,
+            payments: [...(sp.payments || []), {
+              paymentId: paymentData.id,
+              amount: appliedToMonthly,
+              date: paymentData.paymentDate
+            }],
+            status: calculatePaymentStatus({ ...sp, paidAmount: newPaidAmount, remainingAmount: newRemainingAmount })
+          };
+        }
+        return sp;
+      });
+      console.log(`   ✅ Aplicado a mensualidad: ${appliedToMonthly}`);
+    }
+
+    if (updateData.downPaymentPaid) {
       updateData.downPaymentPending = Math.max(0, (freshClient.downPayment || 0) - updateData.downPaymentPaid);
     }
     
-    if (appliedToPlates > 0) {
-      updateData.platesPaid = (freshClient.platesPaid || 0) + appliedToPlates;
+    if (updateData.platesPaid) {
       updateData.platesPending = Math.max(0, (freshClient.platesAmount || 0) - updateData.platesPaid);
     }
     
@@ -486,7 +392,6 @@ function AdminApp() {
       if (allPaid) updateData.status = 'paid';
     }
 
-    // 🆕 GUARDAR DISTRIBUCIÓN
     await updateDoc(doc(db, 'payments', paymentData.id), { distribution: paymentDistribution });
     console.log('✅ Distribución guardada');
 
@@ -509,8 +414,13 @@ function AdminApp() {
       const client = { id: clientSnap.id, ...clientSnap.data() };
       await revertPayment(client, payment);
       await deleteDoc(doc(db, 'payments', paymentId));
-      await loadClients();
-      await loadPayments();
+      
+      // ⬅️ NUEVO: Invalidar caché
+      cacheService.invalidatePaymentCache();
+      
+      // ⬅️ MODIFICADO: Recargar con forceRefresh
+      await loadClients(true);
+      await loadPayments(true);
 
       if (selectedClient && selectedClient.id === client.id) {
         const updatedClientSnap = await getDoc(clientRef);
@@ -562,7 +472,12 @@ function AdminApp() {
         ...updates,
         updatedAt: new Date()
       });
-      await loadClients();
+      
+      // ⬅️ NUEVO: Invalidar caché
+      cacheService.invalidatePaymentCache();
+      
+      // ⬅️ MODIFICADO: Recargar con forceRefresh
+      await loadClients(true);
       
       if (selectedClient && selectedClient.id === clientId) {
         const clientRef = doc(db, 'clients', clientId);

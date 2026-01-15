@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Trash2, Eye, EyeOff, Mail, Phone, MessageSquare, Calendar, ExternalLink } from 'lucide-react';
 import { getAllLeads, updateLeadStatus, deleteLead } from '../services/leadService';
+import { cacheService } from '../services/cacheService';
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState([]);
@@ -26,12 +27,23 @@ export default function LeadsPage() {
 
   useEffect(() => {
     loadLeads();
+
+    // ⬅️ NUEVO: Suscribirse a invalidaciones de caché
+    const unsubscribe = cacheService.subscribe((type) => {
+      if (type === 'leads' || type === 'all') {
+        console.log('🔄 Caché de leads invalidada, recargando...');
+        loadLeads(true);
+      }
+    }, 'leads');
+
+    return () => unsubscribe();
   }, []);
 
-  const loadLeads = async () => {
+  // ⬅️ MODIFICADO: Función para cargar leads con caché
+  const loadLeads = async (forceRefresh = false) => {
     try {
       setLoading(true);
-      const allLeads = await getAllLeads();
+      const allLeads = await getAllLeads({}, forceRefresh);
       setLeads(allLeads);
     } catch (error) {
       console.error('Error cargando leads:', error);
@@ -44,6 +56,9 @@ export default function LeadsPage() {
   const handleStatusChange = async (leadId, newStatus) => {
     try {
       await updateLeadStatus(leadId, newStatus);
+      
+      // La caché se invalida automáticamente en el servicio
+      // Actualizar estado local inmediatamente para mejor UX
       setLeads(leads.map(lead => 
         lead.id === leadId ? { ...lead, status: newStatus } : lead
       ));
@@ -58,6 +73,9 @@ export default function LeadsPage() {
     
     try {
       await deleteLead(leadId);
+      
+      // La caché se invalida automáticamente en el servicio
+      // Actualizar estado local inmediatamente para mejor UX
       setLeads(leads.filter(lead => lead.id !== leadId));
     } catch (error) {
       console.error('Error eliminando lead:', error);
@@ -69,26 +87,22 @@ export default function LeadsPage() {
     ? leads 
     : leads.filter(lead => lead.status === filterStatus);
 
-  const statusColors = {
-    new: 'bg-blue-100 text-blue-800',
-    contacted: 'bg-yellow-100 text-yellow-800',
-    qualified: 'bg-purple-100 text-purple-800',
-    converted: 'bg-green-100 text-green-800',
-    closed: 'bg-gray-100 text-gray-800'
-  };
-
-  const statusLabels = {
-    new: 'Nuevo',
-    contacted: 'Contactado',
-    qualified: 'Calificado',
-    converted: 'Convertido',
-    closed: 'Cerrado'
-  };
+  const statusOptions = [
+    { value: 'all', label: 'Todos', color: 'gray' },
+    { value: 'new', label: 'Nuevos', color: 'blue' },
+    { value: 'contacted', label: 'Contactados', color: 'yellow' },
+    { value: 'qualified', label: 'Calificados', color: 'purple' },
+    { value: 'converted', label: 'Convertidos', color: 'green' },
+    { value: 'closed', label: 'Cerrados', color: 'red' }
+  ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando leads...</p>
+        </div>
       </div>
     );
   }
@@ -96,179 +110,165 @@ export default function LeadsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Leads</h1>
-          <p className="text-gray-600">Gestiona los contactos recibidos desde el sitio web</p>
+          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+          <p className="text-gray-600 mt-1">{filteredLeads.length} leads totales</p>
         </div>
-        <div className="bg-white px-4 py-2 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">Total de leads</p>
-          <p className="text-2xl font-bold text-gray-900">{leads.length}</p>
-        </div>
+        
+        {/* Botón de refresh */}
+        <button
+          onClick={() => loadLeads(true)}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          🔄 Actualizar
+        </button>
       </div>
 
       {/* Filtros */}
       <div className="bg-white rounded-lg shadow p-4">
         <div className="flex gap-2 flex-wrap">
-          <button
-            onClick={() => setFilterStatus('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition ${
-              filterStatus === 'all'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Todos ({leads.length})
-          </button>
-          {Object.entries(statusLabels).map(([status, label]) => {
-            const count = leads.filter(l => l.status === status).length;
-            return (
-              <button
-                key={status}
-                onClick={() => setFilterStatus(status)}
-                className={`px-4 py-2 rounded-lg font-medium transition ${
-                  filterStatus === status
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {label} ({count})
-              </button>
-            );
-          })}
+          {statusOptions.map(option => (
+            <button
+              key={option.value}
+              onClick={() => setFilterStatus(option.value)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filterStatus === option.value
+                  ? `bg-${option.color}-100 text-${option.color}-800 border-2 border-${option.color}-500`
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {option.label} ({
+                option.value === 'all' 
+                  ? leads.length 
+                  : leads.filter(l => l.status === option.value).length
+              })
+            </button>
+          ))}
         </div>
       </div>
 
       {/* Lista de Leads */}
       {filteredLeads.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
-          <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            No hay leads
-          </h3>
-          <p className="text-gray-600">
-            {filterStatus === 'all' 
-              ? 'Aún no has recibido contactos desde el sitio web'
-              : `No hay leads con estado "${statusLabels[filterStatus]}"`
-            }
-          </p>
+          <MessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-500 text-lg">No hay leads para mostrar</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {filteredLeads.map((lead) => (
-            <div key={lead.id} className="bg-white rounded-lg shadow hover:shadow-md transition p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-900">
-                      {lead.name}
-                    </h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${statusColors[lead.status]}`}>
-                      {statusLabels[lead.status]}
-                    </span>
-                  </div>
-                  
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                    {lead.phone && (
-                      <a href={`tel:${lead.phone}`} className="flex items-center gap-1 hover:text-blue-600">
-                        <Phone className="w-4 h-4" />
-                        {lead.phone}
-                      </a>
-                    )}
-                    {lead.email && (
-                      <a href={`mailto:${lead.email}`} className="flex items-center gap-1 hover:text-blue-600">
-                        <Mail className="w-4 h-4" />
-                        {lead.email}
-                      </a>
-                    )}
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      {formatDate(lead.createdAt?.toDate?.() || lead.createdAt)}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleDelete(lead.id)}
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                  title="Eliminar lead"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Mensaje */}
-              {lead.message && (
-                <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-1">Mensaje:</p>
-                  <p className="text-gray-600">{lead.message}</p>
-                </div>
-              )}
-
-              {/* Información del Vehículo */}
-              {lead.vehicleInfo && (
-                <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Contacto
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Vehículo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredLeads.map(lead => (
+                <tr key={lead.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Vehículo de interés:</p>
-                      <p className="font-semibold text-gray-900">
-                        {lead.vehicleInfo.year} {lead.vehicleInfo.make} {lead.vehicleInfo.model}
-                      </p>
-                      {lead.vehicleInfo.price && (
-                        <p className="text-sm text-gray-600">
-                          Precio: ${lead.vehicleInfo.price.toLocaleString()}
-                        </p>
+                      <div className="text-sm font-medium text-gray-900">{lead.name}</div>
+                      <div className="text-sm text-gray-500 flex items-center gap-2">
+                        <Phone className="w-3 h-3" />
+                        {lead.phone}
+                      </div>
+                      {lead.email && (
+                        <div className="text-sm text-gray-500 flex items-center gap-2">
+                          <Mail className="w-3 h-3" />
+                          {lead.email}
+                        </div>
                       )}
                     </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="text-sm text-gray-900">{lead.vehicleInfo || 'No especificado'}</div>
                     {lead.vehicleId && (
                       <a
-                        href={`/vehicle/${lead.vehicleId}`}
+                        href={`/inventory/${lead.vehicleId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                       >
-                        Ver vehículo
-                        <ExternalLink className="w-4 h-4" />
+                        Ver vehículo <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{formatDate(lead.createdAt)}</div>
+                    <div className="text-xs text-gray-500">
+                      Fuente: {lead.source === 'website' ? 'Web' : lead.source}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <select
+                      value={lead.status}
+                      onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                      className={`text-sm rounded-full px-3 py-1 font-semibold border-0 focus:ring-2 focus:ring-blue-500 ${
+                        lead.status === 'new' ? 'bg-blue-100 text-blue-800' :
+                        lead.status === 'contacted' ? 'bg-yellow-100 text-yellow-800' :
+                        lead.status === 'qualified' ? 'bg-purple-100 text-purple-800' :
+                        lead.status === 'converted' ? 'bg-green-100 text-green-800' :
+                        'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      <option value="new">Nuevo</option>
+                      <option value="contacted">Contactado</option>
+                      <option value="qualified">Calificado</option>
+                      <option value="converted">Convertido</option>
+                      <option value="closed">Cerrado</option>
+                    </select>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleDelete(lead.id)}
+                        className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded transition"
+                        title="Eliminar lead"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Mensaje si hay notas */}
+      {filteredLeads.some(lead => lead.message) && (
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Mensajes de Leads</h3>
+          <div className="space-y-4">
+            {filteredLeads
+              .filter(lead => lead.message)
+              .map(lead => (
+                <div key={lead.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="font-semibold text-gray-900">{lead.name}</span>
+                      <span className="text-sm text-gray-500 ml-2">{formatDate(lead.createdAt)}</span>
+                    </div>
                   </div>
+                  <p className="text-gray-700">{lead.message}</p>
                 </div>
-              )}
-
-              {/* Información Adicional */}
-              <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
-                {lead.preferredContact && (
-                  <span>
-                    <strong>Contacto preferido:</strong> {lead.preferredContact === 'phone' ? 'Teléfono' : 'Email'}
-                  </span>
-                )}
-                {lead.source && (
-                  <span>
-                    <strong>Origen:</strong> {lead.source === 'contact_page' ? 'Página de contacto' : 'Detalle de vehículo'}
-                  </span>
-                )}
-              </div>
-
-              {/* Cambiar Estado */}
-              <div className="flex flex-wrap gap-2">
-                <span className="text-sm font-medium text-gray-700 self-center">Cambiar estado:</span>
-                {Object.entries(statusLabels).map(([status, label]) => (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusChange(lead.id, status)}
-                    disabled={lead.status === status}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition ${
-                      lead.status === status
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
+              ))}
+          </div>
         </div>
       )}
     </div>
