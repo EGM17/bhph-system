@@ -31,9 +31,15 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     // Imágenes
     images: [],
     
-    // Descripción
+    // Descripción (mantener retrocompatibilidad)
     description: '',
     features: [],
+    
+    // 🆕 NUEVO: Campos bilingües
+    description_es: '',
+    description_en: '',
+    features_es: [],
+    features_en: [],
     
     // Financiamiento
     downPaymentFrom: 0,
@@ -49,6 +55,11 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
   const [images, setImages] = useState(vehicle?.images || []);
   const [saving, setSaving] = useState(false);
   const [newFeature, setNewFeature] = useState('');
+  
+  // 🆕 NUEVO: Estados para features bilingües
+  const [newFeature_es, setNewFeature_es] = useState('');
+  const [newFeature_en, setNewFeature_en] = useState('');
+  
   const [vinDecoded, setVinDecoded] = useState(!!vehicle);
 
   useEffect(() => {
@@ -77,24 +88,59 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     }));
   };
 
-  const handleAddFeature = () => {
+  const addFeature = () => {
     if (newFeature.trim()) {
       setFormData(prev => ({
         ...prev,
-        features: [...(prev.features || []), newFeature.trim()]
+        features: [...prev.features, newFeature.trim()]
       }));
       setNewFeature('');
     }
   };
 
-  const handleRemoveFeature = (index) => {
+  // 🆕 NUEVO: Funciones para características bilingües
+  const addFeature_es = () => {
+    if (newFeature_es.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        features_es: [...(prev.features_es || []), newFeature_es.trim()]
+      }));
+      setNewFeature_es('');
+    }
+  };
+
+  const addFeature_en = () => {
+    if (newFeature_en.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        features_en: [...(prev.features_en || []), newFeature_en.trim()]
+      }));
+      setNewFeature_en('');
+    }
+  };
+
+  const removeFeature = (index) => {
     setFormData(prev => ({
       ...prev,
       features: prev.features.filter((_, i) => i !== index)
     }));
   };
 
-  // 🔧 FIX: Nuevo flujo corregido para evitar carpetas temp
+  // 🆕 NUEVO: Funciones para eliminar características bilingües
+  const removeFeature_es = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      features_es: (prev.features_es || []).filter((_, i) => i !== index)
+    }));
+  };
+
+  const removeFeature_en = (index) => {
+    setFormData(prev => ({
+      ...prev,
+      features_en: (prev.features_en || []).filter((_, i) => i !== index)
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -104,83 +150,60 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     }
 
     if (images.length === 0) {
-      alert('Por favor agrega al menos una imagen del vehículo');
+      alert('Por favor agrega al menos una imagen');
       return;
     }
 
     setSaving(true);
 
     try {
-      // Separar imágenes nuevas y existentes
-      const newImages = images.filter(img => img.file);
-      const existingImages = images.filter(img => img.url && !img.file);
+      let uploadedImages = [];
 
-      let vehicleId = vehicle?.id; // Si existe, usar el ID actual
-      let imageUrls = existingImages; // Empezar con las imágenes existentes
-
-      // ✅ CASO 1: EDITAR vehículo existente
       if (vehicle) {
-        // Si hay imágenes nuevas, subirlas con el ID existente
+        // Editar vehículo existente
+        const newImages = images.filter(img => img.file);
+        const existingImages = images.filter(img => !img.file);
+
         if (newImages.length > 0) {
-          console.log(`📤 Subiendo ${newImages.length} imágenes nuevas para vehículo ${vehicleId}`);
-          const uploadedUrls = await uploadMultipleImages(newImages, vehicleId);
-          imageUrls = [...existingImages, ...uploadedUrls];
-        }
-
-        // Actualizar vehículo
-        const updatedData = {
-          ...formData,
-          images: imageUrls
-        };
-
-        const updated = await updateVehicle(vehicleId, updatedData);
-        console.log('✅ Vehículo actualizado:', updated);
-        onSave(updated);
-      } 
-      // ✅ CASO 2: CREAR nuevo vehículo
-      else {
-        // Crear vehículo primero (sin imágenes)
-        const vehicleData = {
-          ...formData,
-          images: [] // Vacío por ahora
-        };
-
-        const createdVehicle = await createVehicle(vehicleData);
-        vehicleId = createdVehicle.id;
-        console.log('✅ Vehículo creado con ID:', vehicleId);
-
-        // Subir imágenes con el ID del vehículo
-        if (newImages.length > 0) {
-          console.log(`📤 Subiendo ${newImages.length} imágenes para vehículo ${vehicleId}`);
-          const uploadedUrls = await uploadMultipleImages(newImages, vehicleId);
-          
-          // Actualizar vehículo con las URLs de las imágenes
-          const updatedWithImages = await updateVehicle(vehicleId, {
-            images: uploadedUrls
-          });
-          
-          console.log('✅ Vehículo actualizado con imágenes');
-          onSave(updatedWithImages);
+          const uploaded = await uploadMultipleImages(newImages, vehicle.id);
+          uploadedImages = [...existingImages, ...uploaded];
         } else {
-          onSave(createdVehicle);
+          uploadedImages = existingImages;
         }
+
+        await updateVehicle(vehicle.id, {
+          ...formData,
+          images: uploadedImages
+        });
+      } else {
+        // Crear nuevo vehículo
+        const tempId = `temp_${Date.now()}`;
+        uploadedImages = await uploadMultipleImages(images, tempId);
+
+        const vehicleId = await createVehicle({
+          ...formData,
+          images: []
+        });
+
+        uploadedImages = uploadedImages.map(img => ({
+          ...img,
+          url: img.url.replace(tempId, vehicleId)
+        }));
+
+        await updateVehicle(vehicleId, { images: uploadedImages });
       }
 
+      onSave();
     } catch (error) {
-      console.error('❌ Error guardando vehículo:', error);
-      alert('Error al guardar el vehículo. Por favor intenta de nuevo.');
+      console.error('Error guardando vehículo:', error);
+      alert('Error al guardar el vehículo: ' + error.message);
     } finally {
       setSaving(false);
     }
   };
 
-  const vehicleTitle = formData.make && formData.model 
-    ? formatVehicleTitle(formData)
-    : 'Nuevo Vehículo';
-
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
@@ -191,469 +214,523 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
               >
                 <ArrowLeft className="w-6 h-6 text-gray-600" />
               </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-800">
-                  {vehicle ? 'Editar Vehículo' : 'Agregar Vehículo'}
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">{vehicleTitle}</p>
-              </div>
+              <h1 className="text-2xl font-bold text-gray-800">
+                {vehicle ? 'Editar Vehículo' : 'Nuevo Vehículo'}
+              </h1>
             </div>
 
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => {/* TODO: Preview */}}
-                className="flex items-center gap-2 px-4 py-2 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium"
-              >
-                <Eye className="w-4 h-4" />
-                Vista Previa
-              </button>
-              
-              <button
-                onClick={handleSubmit}
-                disabled={saving || !vinDecoded}
-                className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-medium shadow-lg"
-              >
-                {saving ? (
-                  <>
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Guardando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4" />
-                    {vehicle ? 'Actualizar' : 'Guardar'} Vehículo
-                  </>
-                )}
-              </button>
-            </div>
+            <button
+              onClick={handleSubmit}
+              disabled={saving || !vinDecoded}
+              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition"
+            >
+              {saving ? (
+                <>
+                  <Loader className="w-5 h-5 animate-spin" />
+                  Guardando...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5" />
+                  Guardar Vehículo
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Form Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          
-          {/* VIN Decoder - Solo si es nuevo */}
-          {!vehicle && (
-            <VINDecoder onVehicleDecoded={handleVehicleDecoded} />
-          )}
+      <form onSubmit={handleSubmit} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* VIN Decoder */}
+        {!vehicle && (
+          <VINDecoder onVehicleDecoded={handleVehicleDecoded} />
+        )}
 
-          {/* Resto del formulario - mantener igual */}
-          {vinDecoded && (
-            <>
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  Información del Vehículo
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      VIN *
-                    </label>
-                    <input
-                      type="text"
-                      name="vin"
-                      value={formData.vin}
-                      readOnly
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm cursor-not-allowed"
-                      title="El VIN no puede ser editado después de decodificar"
-                    />
-                  </div>
+        {vinDecoded && (
+          <>
+            {/* Información Básica */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
+                🚗 Información del Vehículo
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    VIN *
+                  </label>
+                  <input
+                    type="text"
+                    name="vin"
+                    value={formData.vin}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="17 caracteres"
+                    required
+                    disabled={!!vehicle}
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Número de Stock
-                    </label>
-                    <input
-                      type="text"
-                      name="stockNumber"
-                      value={formData.stockNumber}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: A1234"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Número de Stock
+                  </label>
+                  <input
+                    type="text"
+                    name="stockNumber"
+                    value={formData.stockNumber}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Auto-generado si se deja vacío"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Marca *
-                    </label>
-                    <input
-                      type="text"
-                      name="make"
-                      value={formData.make}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: Toyota, Honda, Ford"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marca *
+                  </label>
+                  <input
+                    type="text"
+                    name="make"
+                    value={formData.make}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: Toyota, Honda, Ford"
+                    required
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Modelo *
-                    </label>
-                    <input
-                      type="text"
-                      name="model"
-                      value={formData.model}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: Camry, Civic, F-150"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Modelo *
+                  </label>
+                  <input
+                    type="text"
+                    name="model"
+                    value={formData.model}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: Camry, Civic, F-150"
+                    required
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Año *
-                    </label>
-                    <input
-                      type="number"
-                      name="year"
-                      value={formData.year}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: 2020"
-                      min="1900"
-                      max={new Date().getFullYear() + 1}
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Año *
+                  </label>
+                  <input
+                    type="number"
+                    name="year"
+                    value={formData.year}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: 2020"
+                    min="1900"
+                    max={new Date().getFullYear() + 1}
+                    required
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Versión/Trim
-                    </label>
-                    <input
-                      type="text"
-                      name="trim"
-                      value={formData.trim}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: LX, EX, Sport"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Versión/Trim
+                  </label>
+                  <input
+                    type="text"
+                    name="trim"
+                    value={formData.trim}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: LX, EX, Sport"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Carrocería
-                    </label>
-                    <input
-                      type="text"
-                      name="bodyClass"
-                      value={formData.bodyClass}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: Sedan, SUV, Pickup"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Carrocería
+                  </label>
+                  <input
+                    type="text"
+                    name="bodyClass"
+                    value={formData.bodyClass}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: Sedan, SUV, Pickup"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Millaje (mi)
-                    </label>
-                    <input
-                      type="number"
-                      name="mileage"
-                      value={formData.mileage}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="85000"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    MPG
+                  </label>
+                  <input
+                    type="text"
+                    name="mpg"
+                    value={formData.mpg}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: 25 city / 32 hwy"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      MPG (Millas por galón)
-                    </label>
-                    <input
-                      type="text"
-                      name="mpg"
-                      value={formData.mpg}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: 25 city / 32 hwy"
-                    />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Millaje *
+                  </label>
+                  <input
+                    type="number"
+                    name="mileage"
+                    value={formData.mileage}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej: 50000"
+                    required
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Condición
-                    </label>
-                    <select
-                      name="condition"
-                      value={formData.condition}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="used">Usado</option>
-                      <option value="certified">Certificado</option>
-                      <option value="new">Nuevo</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Condición *
+                  </label>
+                  <select
+                    name="condition"
+                    value={formData.condition}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="new">Nuevo</option>
+                    <option value="used">Usado</option>
+                    <option value="certified">Certificado</option>
+                  </select>
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estado
-                    </label>
-                    <select
-                      name="status"
-                      value={formData.status}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="available">Disponible</option>
-                      <option value="pending">Pendiente</option>
-                      <option value="sold">Vendido</option>
-                    </select>
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Estado *
+                  </label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="available">Disponible</option>
+                    <option value="sold">Vendido</option>
+                    <option value="reserved">Reservado</option>
+                    <option value="maintenance">Mantenimiento</option>
+                  </select>
                 </div>
               </div>
+            </div>
 
-              {/* Precios y Financiamiento */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  💰 Precios y Financiamiento
-                </h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio del Vehículo
-                    </label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                        <input
-                          type="number"
-                          name="price"
-                          value={formData.price}
-                          onChange={handleChange}
-                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                          placeholder="18000"
-                        />
-                      </div>
-                      <label className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+            {/* Tipo de Financiamiento y Precio */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
+                💰 Financiamiento y Precio
+              </h2>
+
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tipo de Financiamiento *
+                  </label>
+                  <select
+                    name="financingType"
+                    value={formData.financingType}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="in-house">Financiamiento en Casa (0% Interés)</option>
+                    <option value="cash-only">Solo Efectivo</option>
+                  </select>
+                </div>
+
+                {formData.financingType === 'in-house' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-blue-50 rounded-lg">
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                         <input
                           type="checkbox"
-                          name="showPrice"
-                          checked={formData.showPrice}
+                          name="showDownPayment"
+                          checked={formData.showDownPayment}
                           onChange={handleChange}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="w-4 h-4"
                         />
-                        <span className="text-sm">Mostrar</span>
+                        Mostrar Enganche
                       </label>
+                      {formData.showDownPayment && (
+                        <input
+                          type="number"
+                          name="downPaymentFrom"
+                          value={formData.downPaymentFrom}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enganche desde..."
+                        />
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                        <input
+                          type="checkbox"
+                          name="showMonthlyPayment"
+                          checked={formData.showMonthlyPayment}
+                          onChange={handleChange}
+                          className="w-4 h-4"
+                        />
+                        Mostrar Pago Mensual
+                      </label>
+                      {formData.showMonthlyPayment && (
+                        <input
+                          type="number"
+                          name="monthlyPaymentFrom"
+                          value={formData.monthlyPaymentFrom}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                          placeholder="Pago mensual desde..."
+                        />
+                      )}
                     </div>
                   </div>
+                )}
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Financiamiento
-                    </label>
-                    <select
-                      name="financingType"
-                      value={formData.financingType}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="in-house">Financiamiento Interno (In-House)</option>
-                      <option value="bank">Financiamiento Bancario</option>
-                      <option value="cash-only">Solo Efectivo</option>
-                    </select>
-                  </div>
-
-                  {formData.financingType === 'in-house' && (
-                    <>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Enganche Desde
-                        </label>
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <input
-                              type="number"
-                              name="downPaymentFrom"
-                              value={formData.downPaymentFrom}
-                              onChange={handleChange}
-                              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                              placeholder="2000"
-                            />
-                          </div>
-                          <label className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                            <input
-                              type="checkbox"
-                              name="showDownPayment"
-                              checked={formData.showDownPayment}
-                              onChange={handleChange}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm">Mostrar</span>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mensualidad Desde
-                        </label>
-                        <div className="flex gap-2">
-                          <div className="relative flex-1">
-                            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                            <input
-                              type="number"
-                              name="monthlyPaymentFrom"
-                              value={formData.monthlyPaymentFrom}
-                              onChange={handleChange}
-                              className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                              placeholder="350"
-                            />
-                          </div>
-                          <label className="flex items-center gap-2 px-4 py-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
-                            <input
-                              type="checkbox"
-                              name="showMonthlyPayment"
-                              checked={formData.showMonthlyPayment}
-                              onChange={handleChange}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm">Mostrar</span>
-                          </label>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {formData.financingType === 'in-house' && (
-                    <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-800">
-                        <strong>💡 Tip sobre financiamiento:</strong> Los montos de enganche y mensualidad son valores "desde". 
-                        Puedes ocultar cualquier dato individualmente sin afectar los demás.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Imágenes */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  📸 Imágenes del Vehículo
-                </h2>
-                <ImageUploader 
-                  images={images} 
-                  onChange={setImages}
-                  maxImages={20}
-                />
-              </div>
-
-              {/* Descripción */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  📝 Descripción y Características
-                </h2>
-                
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción del Vehículo
-                    </label>
-                    <textarea
-                      name="description"
-                      value={formData.description}
-                      onChange={handleChange}
-                      rows="6"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Describe el vehículo, su estado, historial, etc..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Características Especiales
-                    </label>
-                    <div className="flex gap-2">
+                {formData.financingType === 'cash-only' && (
+                  <div className="p-4 bg-emerald-50 rounded-lg">
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                       <input
-                        type="text"
-                        value={newFeature}
-                        onChange={(e) => setNewFeature(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
-                        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ej: Sistema de navegación GPS"
+                        type="checkbox"
+                        name="showPrice"
+                        checked={formData.showPrice}
+                        onChange={handleChange}
+                        className="w-4 h-4"
                       />
-                      <button
-                        type="button"
-                        onClick={handleAddFeature}
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
-                      >
-                        Agregar
-                      </button>
-                    </div>
-                    
-                    {formData.features && formData.features.length > 0 && (
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {formData.features.map((feature, index) => (
-                          <span
-                            key={index}
-                            className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm"
-                          >
-                            {feature}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveFeature(index)}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              ×
-                            </button>
-                          </span>
-                        ))}
-                      </div>
+                      Mostrar Precio
+                    </label>
+                    {formData.showPrice && (
+                      <input
+                        type="number"
+                        name="price"
+                        value={formData.price}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="Precio del vehículo"
+                      />
                     )}
                   </div>
-                </div>
-              </div>
+                )}
 
-              {/* Opciones de Publicación */}
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
-                  ⚙️ Opciones de Publicación
-                </h2>
-                
-                <div className="space-y-4">
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      name="isFeatured"
-                      checked={formData.isFeatured}
-                      onChange={handleChange}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
-                    />
-                    <div>
-                      <span className="block font-medium text-gray-800">⭐ Vehículo Destacado</span>
-                      <span className="text-sm text-gray-600">Aparecerá en la sección de destacados</span>
-                    </div>
-                  </label>
-                  
-                  <label className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="checkbox"
-                      name="isPublished"
-                      checked={formData.isPublished}
-                      onChange={handleChange}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
-                    />
-                    <div>
-                      <span className="block font-medium text-gray-800">🌐 Publicar en el sitio web</span>
-                      <span className="text-sm text-gray-600">Visible para clientes en la página pública</span>
-                    </div>
-                  </label>
+                <div className="p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    💡 <strong>Tip:</strong> Puedes ocultar cualquier dato individualmente sin afectar los demás.
+                  </p>
                 </div>
               </div>
-            </>
-          )}
-        </form>
-      </div>
+            </div>
+
+            {/* Imágenes */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
+                📸 Imágenes del Vehículo
+              </h2>
+              <ImageUploader 
+                images={images} 
+                onChange={setImages}
+                maxImages={20}
+              />
+            </div>
+
+            {/* 🆕 NUEVO: Descripción y Características BILINGÜES */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
+                📝 Descripción y Características
+              </h2>
+              
+              <div className="space-y-6">
+                {/* Descripción en Español */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción del Vehículo (Español)
+                  </label>
+                  <textarea
+                    name="description_es"
+                    value={formData.description_es || formData.description || ''}
+                    onChange={handleChange}
+                    rows="6"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Describe el vehículo, su estado, historial, etc..."
+                  />
+                </div>
+
+                {/* Descripción en Inglés */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción del Vehículo (English)
+                  </label>
+                  <textarea
+                    name="description_en"
+                    value={formData.description_en || ''}
+                    onChange={handleChange}
+                    rows="6"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Describe the vehicle, its condition, history, etc..."
+                  />
+                </div>
+
+                {/* Características en Español */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Características Especiales (Español)
+                  </label>
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={newFeature_es}
+                      onChange={(e) => setNewFeature_es(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addFeature_es();
+                        }
+                      }}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ej: Sistema de navegación GPS"
+                    />
+                    <button
+                      type="button"
+                      onClick={addFeature_es}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                      Agregar
+                    </button>
+                  </div>
+
+                  {(formData.features_es || formData.features || []).length > 0 && (
+                    <div className="space-y-2">
+                      {(formData.features_es || formData.features || []).map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded">
+                          <span className="flex-1">{feature}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFeature_es(index)}
+                            className="text-red-600 hover:text-red-700 text-sm"
+                          >
+                            Eliminar
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Características en Inglés */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Características Especiales (English)
+                  </label>
+                  <div className="flex gap-2 mb-3">
+                    <input
+                      type="text"
+                      value={newFeature_en}
+                      onChange={(e) => setNewFeature_en(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addFeature_en();
+                        }
+                      }}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Ex: GPS Navigation System"
+                    />
+                    <button
+                      type="button"
+                      onClick={addFeature_en}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                      Add
+                    </button>
+                  </div>
+
+                  {(formData.features_en || []).length > 0 && (
+                    <div className="space-y-2">
+                      {(formData.features_en || []).map((feature, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded">
+                          <span className="flex-1">{feature}</span>
+                          <button
+                            type="button"
+                            onClick={() => removeFeature_en(index)}
+                            className="text-red-600 hover:text-red-700 text-sm"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Metadata */}
+            <div className="bg-white rounded-lg shadow p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
+                ⚙️ Opciones de Publicación
+              </h2>
+
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                  <input
+                    type="checkbox"
+                    name="isPublished"
+                    checked={formData.isPublished}
+                    onChange={handleChange}
+                    className="w-5 h-5"
+                  />
+                  <div>
+                    <p className="font-medium text-gray-900">Publicar en el sitio web</p>
+                    <p className="text-sm text-gray-600">El vehículo será visible para el público</p>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition">
+                  <input
+                    type="checkbox"
+                    name="isFeatured"
+                    checked={formData.isFeatured}
+                    onChange={handleChange}
+                    className="w-5 h-5"
+                  />
+                  <div>
+                    <p className="font-medium text-gray-900">Marcar como destacado</p>
+                    <p className="text-sm text-gray-600">Aparecerá en la sección de vehículos destacados</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Preview */}
+            {formData.make && formData.model && formData.year && (
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                <div className="flex items-start gap-3">
+                  <Eye className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                  <div>
+                    <p className="font-semibold text-blue-900 mb-1">
+                      Vista Previa del Título
+                    </p>
+                    <p className="text-lg font-bold text-gray-900">
+                      {formatVehicleTitle(formData)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </form>
     </div>
   );
 }

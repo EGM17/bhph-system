@@ -3,9 +3,11 @@ import { ChevronLeft, ChevronRight, ArrowRight, MapPin, Gauge } from 'lucide-rea
 import { Link } from 'react-router-dom';
 import { useFeaturedVehicles } from '../../hooks/usePublicVehicles';
 import { formatVehicleTitle } from '../../services/vinService';
+import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
 
 export default function FeaturedVehicles() {
   const { vehicles, loading } = useFeaturedVehicles(6);
+  const { language } = useLanguage(); // 🆕 NUEVO
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
@@ -18,7 +20,6 @@ export default function FeaturedVehicles() {
     setCurrentIndex((prev) => (prev - 1 + vehicles.length) % vehicles.length);
   };
 
-  // Manejar swipe touch
   const handleTouchStart = (e) => {
     setTouchStart(e.targetTouches[0].clientX);
   };
@@ -41,7 +42,6 @@ export default function FeaturedVehicles() {
       prevSlide();
     }
     
-    // Reset
     setTouchStart(0);
     setTouchEnd(0);
   };
@@ -52,7 +52,9 @@ export default function FeaturedVehicles() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando vehículos destacados...</p>
+            <p className="mt-4 text-gray-600">
+              {language === 'es' ? 'Cargando vehículos destacados...' : 'Loading featured vehicles...'}
+            </p>
           </div>
         </div>
       </section>
@@ -67,26 +69,28 @@ export default function FeaturedVehicles() {
     <section className="py-12 md:py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header - Diseño Limpio */}
+        {/* Section Header */}
         <div className="text-center mb-8 md:mb-16">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full mb-4">
             <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
             <span className="text-sm font-semibold text-blue-700 tracking-wide uppercase">
-              Destacados
+              {language === 'es' ? 'Destacados' : 'Featured'}
             </span>
           </div>
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 tracking-tight">
-            Vehículos destacados
+            {language === 'es' ? 'Vehículos destacados' : 'Featured Vehicles'}
           </h2>
           <p className="text-base md:text-lg lg:text-lg text-gray-600 max-w-2xl mx-auto px-6">
-            Nuestra selección de vehículos más populares con las mejores condiciones
+            {language === 'es' 
+              ? 'Nuestra selección de vehículos más populares con las mejores condiciones'
+              : 'Our selection of the most popular vehicles with the best conditions'}
           </p>
         </div>
 
         {/* Desktop Grid */}
         <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {vehicles.map((vehicle) => (
-            <VehicleCard key={vehicle.id} vehicle={vehicle} />
+            <VehicleCard key={vehicle.id} vehicle={vehicle} language={language} />
           ))}
         </div>
 
@@ -104,7 +108,7 @@ export default function FeaturedVehicles() {
             >
               {vehicles.map((vehicle) => (
                 <div key={vehicle.id} className="w-full flex-shrink-0 px-2">
-                  <VehicleCard vehicle={vehicle} />
+                  <VehicleCard vehicle={vehicle} language={language} />
                 </div>
               ))}
             </div>
@@ -143,10 +147,10 @@ export default function FeaturedVehicles() {
         {/* View All Button */}
         <div className="text-center">
           <Link
-            to="/inventory"
+            to={language === 'es' ? '/es/inventario' : '/en/inventory'}
             className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-semibold shadow-sm hover:shadow-md"
           >
-            Ver todo el inventario
+            {language === 'es' ? 'Ver todo el inventario' : 'View All Inventory'}
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
@@ -155,8 +159,8 @@ export default function FeaturedVehicles() {
   );
 }
 
-// Vehicle Card Component - Diseño Limpio
-function VehicleCard({ vehicle }) {
+// Vehicle Card Component
+function VehicleCard({ vehicle, language }) {
   const primaryImage = vehicle.images?.find(img => img.isPrimary) || vehicle.images?.[0];
   const title = formatVehicleTitle(vehicle);
   const isInHouseFinancing = vehicle.financingType === 'in-house';
@@ -164,7 +168,7 @@ function VehicleCard({ vehicle }) {
 
   return (
     <Link 
-      to={`/inventory/${vehicle.id}`}
+      to={`${language === 'es' ? '/es' : '/en'}/inventario/${vehicle.id}`}
       className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-100"
     >
       {/* Image */}
@@ -184,21 +188,21 @@ function VehicleCard({ vehicle }) {
           </div>
         )}
         
-        {/* Badges Minimalistas */}
+        {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
           <span className="bg-gray-900/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-            Destacado
+            {language === 'es' ? 'Destacado' : 'Featured'}
           </span>
           
           {isInHouseFinancing && (
             <span className="bg-blue-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-              0% Intereses
+              {language === 'es' ? '0% Intereses' : '0% Interest'}
             </span>
           )}
           
           {isCashOnly && (
             <span className="bg-emerald-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-              Solo Efectivo
+              {language === 'es' ? 'Solo Efectivo' : 'Cash Only'}
             </span>
           )}
         </div>
@@ -233,11 +237,14 @@ function VehicleCard({ vehicle }) {
                 <span className="text-xl md:text-2xl font-bold text-gray-900">
                   ${vehicle.monthlyPaymentFrom}
                 </span>
-                <span className="text-sm text-gray-500 font-medium">/mes</span>
+                <span className="text-sm text-gray-500 font-medium">
+                  {language === 'es' ? '/mes' : '/mo'}
+                </span>
               </div>
               {vehicle.showDownPayment !== false && vehicle.downPaymentFrom && (
                 <p className="text-xs text-gray-600">
-                  Enganche desde <span className="font-semibold text-gray-900">${vehicle.downPaymentFrom?.toLocaleString()}</span>
+                  {language === 'es' ? 'Enganche desde' : 'Down payment from'}{' '}
+                  <span className="font-semibold text-gray-900">${vehicle.downPaymentFrom?.toLocaleString()}</span>
                 </p>
               )}
             </div>
@@ -253,7 +260,7 @@ function VehicleCard({ vehicle }) {
                 </span>
               </div>
               <p className="text-xs text-emerald-600 font-medium">
-                Pago al contado
+                {language === 'es' ? 'Pago al contado' : 'Cash payment'}
               </p>
             </div>
           ) : (
@@ -266,7 +273,7 @@ function VehicleCard({ vehicle }) {
         {/* CTA */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-blue-600 font-semibold group-hover:text-blue-700 transition">
-            Ver detalles
+            {language === 'es' ? 'Ver detalles' : 'View details'}
           </span>
           <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition" />
         </div>

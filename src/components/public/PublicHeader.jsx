@@ -1,16 +1,37 @@
 import { useState } from 'react';
-import { Menu, X, Phone, MapPin, Car } from 'lucide-react';
+import { Menu, X, Phone, MapPin, Car, Globe } from 'lucide-react'; // 🆕 Agregado Globe
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
 
 export default function PublicHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { language, changeLanguage, t } = useLanguage(); // 🆕 NUEVO
 
+  // 🆕 NUEVO: Navegación dinámica según idioma
   const navigation = [
-    { name: 'Inicio', href: '/' },
-    { name: 'Inventario', href: '/inventory' },
-    { name: 'Financiamiento', href: '/financing' },
-    { name: 'Contacto', href: '/contact' }
+    { 
+      name: t('header.home'), 
+      href: language === 'es' ? '/es' : '/en' 
+    },
+    { 
+      name: t('header.inventory'), 
+      href: language === 'es' ? '/es/inventario' : '/en/inventory' 
+    },
+    { 
+      name: t('header.financing'), 
+      href: language === 'es' ? '/es/financiamiento' : '/en/financing' 
+    },
+    { 
+      name: t('header.contact'), 
+      href: language === 'es' ? '/es/contacto' : '/en/contact' 
+    }
   ];
+
+  // 🆕 NUEVO: Función para cambiar idioma
+  const handleLanguageChange = () => {
+    const newLang = language === 'es' ? 'en' : 'es';
+    changeLanguage(newLang);
+  };
 
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
@@ -33,7 +54,18 @@ export default function PublicHeader() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="hidden sm:inline">Lun - Dom: 10AM - 7PM</span>
+              <span className="hidden sm:inline">
+                {language === 'es' ? 'Lun - Dom: 10AM - 7PM' : 'Mon - Sun: 10AM - 7PM'}
+              </span>
+              {/* 🆕 NUEVO: Language Switcher (Desktop) */}
+              <button
+                onClick={handleLanguageChange}
+                className="flex items-center gap-1.5 px-3 py-1 bg-white/10 hover:bg-white/20 rounded-md transition"
+                title={language === 'es' ? 'Switch to English' : 'Cambiar a Español'}
+              >
+                <Globe className="w-4 h-4" />
+                <span className="text-xs font-medium uppercase">{language === 'es' ? 'EN' : 'ES'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -43,7 +75,7 @@ export default function PublicHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to={language === 'es' ? '/es' : '/en'} className="flex items-center gap-3 group">
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-2.5 rounded-xl shadow-lg group-hover:shadow-xl transition">
               <Car className="w-7 h-7 text-white" />
             </div>
@@ -71,10 +103,10 @@ export default function PublicHeader() {
           {/* CTA Button - Desktop */}
           <div className="hidden md:flex items-center gap-3">
             <Link
-              to="/inventory"
+              to={language === 'es' ? '/es/inventario' : '/en/inventory'}
               className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium shadow-lg hover:shadow-xl"
             >
-              Ver inventario
+              {language === 'es' ? 'Ver inventario' : 'View Inventory'}
             </Link>
           </div>
 
@@ -107,12 +139,24 @@ export default function PublicHeader() {
               </Link>
             ))}
             <Link
-              to="/inventory"
+              to={language === 'es' ? '/es/inventario' : '/en/inventory'}
               onClick={() => setMobileMenuOpen(false)}
               className="block w-full px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition font-medium text-center shadow-lg"
             >
-              Ver Inventario
+              {language === 'es' ? 'Ver Inventario' : 'View Inventory'}
             </Link>
+            
+            {/* 🆕 NUEVO: Language Switcher (Mobile) */}
+            <button
+              onClick={() => {
+                handleLanguageChange();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition font-medium"
+            >
+              <Globe className="w-5 h-5" />
+              <span>{language === 'es' ? 'Switch to English' : 'Cambiar a Español'}</span>
+            </button>
           </div>
         </div>
       )}

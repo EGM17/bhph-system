@@ -1,11 +1,12 @@
-import { LogOut, Settings, Plus } from 'lucide-react';
+import { LogOut, Settings, Plus, Languages } from 'lucide-react'; // 🆕 Agregado Languages
 
 export default function AdminLayout({ 
   currentView, 
   setCurrentView, 
   navItems, 
   onNewClient, 
-  onSettings, 
+  onSettings,
+  onTranslations, // 🆕 NUEVO
   onLogout,
   children 
 }) {
@@ -25,6 +26,17 @@ export default function AdminLayout({
                 <Plus className="w-4 h-4" />
                 Nuevo Cliente
               </button>
+              
+              {/* 🆕 NUEVO: Botón de traducciones */}
+              {onTranslations && (
+                <button
+                  onClick={onTranslations}
+                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition"
+                  title="Administrar traducciones"
+                >
+                  <Languages className="w-5 h-5" />
+                </button>
+              )}
               
               <button
                 onClick={onSettings}

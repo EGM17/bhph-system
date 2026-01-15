@@ -1,26 +1,26 @@
-import { ArrowRight, Gauge, MapPin, Calendar } from 'lucide-react';
+import { ArrowRight, MapPin, Gauge } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { formatVehicleTitle } from "../../services/vinService";
+import { formatVehicleTitle } from '../../services/vinService';
 
-export default function VehicleCard({ vehicle, featured = false }) {
+export default function VehicleCard({ vehicle, language = 'es' }) {
   const primaryImage = vehicle.images?.find(img => img.isPrimary) || vehicle.images?.[0];
   const title = formatVehicleTitle(vehicle);
   const isInHouseFinancing = vehicle.financingType === 'in-house';
   const isCashOnly = vehicle.financingType === 'cash-only';
+  const isFeatured = vehicle.isFeatured;
 
   return (
     <Link 
-      to={`/inventory/${vehicle.id}`}
+      to={`${language === 'es' ? '/es/inventario' : '/en/inventory'}/${vehicle.id}`}
       className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-100"
     >
-      {/* Image Container */}
+      {/* Image */}
       <div className="relative aspect-[4/3] overflow-hidden bg-gray-50">
         {primaryImage ? (
           <img
             src={primaryImage.url}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            loading="lazy"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -30,69 +30,42 @@ export default function VehicleCard({ vehicle, featured = false }) {
             </svg>
           </div>
         )}
-
-        {/* Badges Minimalistas */}
+        
+        {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1.5">
-          {featured && (
+          {isFeatured && (
             <span className="bg-gray-900/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-              Destacado
+              {language === 'es' ? 'Destacado' : 'Featured'}
             </span>
           )}
           
           {isInHouseFinancing && (
             <span className="bg-blue-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-              0% Intereses
+              {language === 'es' ? '0% Intereses' : '0% Interest'}
             </span>
           )}
           
           {isCashOnly && (
             <span className="bg-emerald-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-              Solo Efectivo
-            </span>
-          )}
-
-          {vehicle.condition === 'certified' && (
-            <span className="bg-indigo-600/90 backdrop-blur-sm text-white px-2.5 py-1 rounded text-[10px] font-semibold tracking-wide uppercase">
-              Certificado
+              {language === 'es' ? 'Solo Efectivo' : 'Cash Only'}
             </span>
           )}
         </div>
-
-        {/* Status Badge - Solo si está vendido */}
-        {vehicle.status === 'sold' && (
-          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center">
-            <span className="bg-red-600 text-white px-6 py-2 rounded-lg font-bold text-lg">
-              VENDIDO
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Content */}
       <div className="p-5">
-        {/* Title */}
-        <h3 className="text-lg font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition line-clamp-2">
+        <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-3 group-hover:text-blue-600 transition line-clamp-2">
           {title}
         </h3>
 
-        {/* Specs Grid */}
-        <div className="grid grid-cols-2 gap-3 mb-4 text-xs text-gray-600">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="w-3.5 h-3.5 text-gray-400" />
-            <span className="font-medium">{vehicle.year}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
+        {/* Specs */}
+        <div className="flex items-center gap-4 text-xs text-gray-600 mb-4">
+          <div className="flex items-center gap-1">
             <Gauge className="w-3.5 h-3.5 text-gray-400" />
             <span className="font-medium">{vehicle.mileage?.toLocaleString()} mi</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-              <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-            </svg>
-            <span className="font-medium truncate">{vehicle.bodyClass || 'Sedan'}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
             <MapPin className="w-3.5 h-3.5 text-gray-400" />
             <span className="font-medium">Salem, OR</span>
           </div>
@@ -101,20 +74,22 @@ export default function VehicleCard({ vehicle, featured = false }) {
         {/* Separator */}
         <div className="border-t border-gray-100 my-4"></div>
 
-        {/* Pricing Information - Diseño Limpio */}
+        {/* Pricing Information */}
         {isInHouseFinancing ? (
-          // Financiamiento en Casa
           vehicle.showMonthlyPayment !== false && vehicle.monthlyPaymentFrom ? (
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-xl md:text-2xl font-bold text-gray-900">
                   ${vehicle.monthlyPaymentFrom}
                 </span>
-                <span className="text-sm text-gray-500 font-medium">/mes</span>
+                <span className="text-sm text-gray-500 font-medium">
+                  {language === 'es' ? '/mes' : '/mo'}
+                </span>
               </div>
               {vehicle.showDownPayment !== false && vehicle.downPaymentFrom && (
                 <p className="text-xs text-gray-600">
-                  Enganche desde <span className="font-semibold text-gray-900">${vehicle.downPaymentFrom?.toLocaleString()}</span>
+                  {language === 'es' ? 'Enganche desde' : 'Down payment from'}{' '}
+                  <span className="font-semibold text-gray-900">${vehicle.downPaymentFrom?.toLocaleString()}</span>
                 </p>
               )}
             </div>
@@ -122,16 +97,15 @@ export default function VehicleCard({ vehicle, featured = false }) {
             <div className="mb-4 h-16"></div>
           )
         ) : isCashOnly ? (
-          // Solo Efectivo
           vehicle.showPrice !== false && vehicle.price ? (
             <div className="mb-4">
               <div className="flex items-baseline gap-2 mb-1">
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-xl md:text-2xl font-bold text-gray-900">
                   ${vehicle.price?.toLocaleString()}
                 </span>
               </div>
               <p className="text-xs text-emerald-600 font-medium">
-                Pago al contado
+                {language === 'es' ? 'Pago al contado' : 'Cash payment'}
               </p>
             </div>
           ) : (
@@ -141,10 +115,10 @@ export default function VehicleCard({ vehicle, featured = false }) {
           <div className="mb-4 h-16"></div>
         )}
 
-        {/* CTA Button */}
+        {/* CTA */}
         <div className="flex items-center justify-between text-sm">
           <span className="text-blue-600 font-semibold group-hover:text-blue-700 transition">
-            Ver detalles
+            {language === 'es' ? 'Ver detalles' : 'View details'}
           </span>
           <ArrowRight className="w-4 h-4 text-blue-600 group-hover:translate-x-1 transition" />
         </div>

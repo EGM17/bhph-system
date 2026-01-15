@@ -1,8 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { createLead } from '../../services/leadService';
+import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
 
 export default function ContactPage() {
+  const { language, t } = useLanguage(); // 🆕 NUEVO
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,7 +24,6 @@ export default function ContactPage() {
       sessionStorage.removeItem('contactFormSubmitted');
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 8000);
-      // Scroll to top to show success message
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, []);
@@ -45,10 +46,7 @@ export default function ContactPage() {
         source: 'contact_page'
       });
 
-      // Store success flag in sessionStorage before reload
       sessionStorage.setItem('contactFormSubmitted', 'true');
-      
-      // Reload page to avoid Google Translate DOM conflicts
       window.location.reload();
     } catch (error) {
       console.error('Error submitting contact form:', error);
@@ -64,10 +62,10 @@ export default function ContactPage() {
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-4 px-4">
-            Contáctanos
+            {t('contact.title')}
           </h1>
           <p className="text-base md:text-xl text-blue-100 px-4">
-            Estamos aquí para ayudarte. ¡Llama ahora o envíanos mensaje!
+            {t('contact.subtitle')}
           </p>
         </div>
       </div>
@@ -80,10 +78,12 @@ export default function ContactPage() {
               <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
               <div>
                 <p className="text-green-900 font-bold text-lg">
-                  ¡Gracias por tu mensaje!
+                  {language === 'es' ? '¡Gracias por tu mensaje!' : 'Thank you for your message!'}
                 </p>
                 <p className="text-green-700 mt-1">
-                  Nos pondremos en contacto contigo pronto.
+                  {language === 'es' 
+                    ? 'Nos pondremos en contacto contigo pronto.' 
+                    : 'We will get in touch with you soon.'}
                 </p>
               </div>
             </div>
@@ -100,7 +100,9 @@ export default function ContactPage() {
                   <Phone className="w-6 h-6 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">Teléfono</h3>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">
+                    {t('footer.phone')}
+                  </h3>
                   <a
                     href="tel:5038789550"
                     className="text-blue-600 hover:text-blue-700 text-lg font-medium"
@@ -108,7 +110,7 @@ export default function ContactPage() {
                     (503) 878-9550
                   </a>
                   <p className="text-sm text-gray-600 mt-1">
-                    Lun - Dom: 10AM - 7PM
+                    {language === 'es' ? 'Lun - Dom: 10AM - 7PM' : 'Mon - Sun: 10AM - 7PM'}
                   </p>
                 </div>
               </div>
@@ -121,7 +123,9 @@ export default function ContactPage() {
                   <MapPin className="w-6 h-6 text-green-600" />
                 </div>
                 <div>
-                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">Dirección</h3>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-1">
+                    {t('footer.address')}
+                  </h3>
                   <p className="text-gray-700">
                     915 12th St SE<br />
                     Salem, OR 97302
@@ -132,7 +136,7 @@ export default function ContactPage() {
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-700 text-sm mt-2 inline-block"
                   >
-                    Ver en Google Maps →
+                    {language === 'es' ? 'Ver en Google Maps →' : 'View on Google Maps →'}
                   </a>
                 </div>
               </div>
@@ -145,10 +149,16 @@ export default function ContactPage() {
                   <Clock className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2">Horario</h3>
+                  <h3 className="text-base md:text-lg font-bold text-gray-900 mb-2">
+                    {t('footer.hours')}
+                  </h3>
                   <div className="space-y-1 text-gray-700">
-                    <p>Lunes - Viernes: 10AM - 7PM</p>
-                    <p>Sábado - Domingo: 10AM - 7PM</p>
+                    <p>
+                      {language === 'es' ? 'Lunes - Viernes: 10AM - 7PM' : 'Monday - Friday: 10AM - 7PM'}
+                    </p>
+                    <p>
+                      {language === 'es' ? 'Sábado - Domingo: 10AM - 7PM' : 'Saturday - Sunday: 10AM - 7PM'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -162,10 +172,12 @@ export default function ContactPage() {
                 <Mail className="w-8 h-8 text-blue-600" />
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900">
-                    Envíanos un mensaje
+                    {t('contact.sendMessage')}
                   </h2>
                   <p className="text-sm md:text-base text-gray-600">
-                    Te responderemos lo antes posible
+                    {language === 'es' 
+                      ? 'Te responderemos lo antes posible' 
+                      : 'We will respond as soon as possible'}
                   </p>
                 </div>
               </div>
@@ -178,7 +190,9 @@ export default function ContactPage() {
                   <div className="flex items-center gap-2">
                     <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
                     <p className="text-red-800 font-medium">
-                      Error al enviar el formulario. Por favor intenta de nuevo.
+                      {language === 'es' 
+                        ? 'Error al enviar el formulario. Por favor intenta de nuevo.' 
+                        : 'Error submitting form. Please try again.'}
                     </p>
                   </div>
                 </div>
@@ -188,14 +202,14 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre completo *
+                      {t('forms.name')} *
                     </label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Juan Pérez"
+                      placeholder={language === 'es' ? 'Juan Pérez' : 'John Doe'}
                       required
                       disabled={submitting}
                     />
@@ -203,7 +217,7 @@ export default function ContactPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Teléfono *
+                      {t('forms.phone')} *
                     </label>
                     <input
                       type="tel"
@@ -219,21 +233,21 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
+                    {t('forms.email')}
                   </label>
                   <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="tu@email.com"
+                    placeholder={language === 'es' ? 'tu@email.com' : 'your@email.com'}
                     disabled={submitting}
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Método de contacto preferido *
+                    {language === 'es' ? 'Método de contacto preferido *' : 'Preferred contact method *'}
                   </label>
                   <div className="flex gap-4">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -246,7 +260,7 @@ export default function ContactPage() {
                         className="w-4 h-4 text-blue-600"
                         disabled={submitting}
                       />
-                      <span className="text-gray-700">Teléfono</span>
+                      <span className="text-gray-700">{t('forms.phone')}</span>
                     </label>
                     <label className="flex items-center gap-2 cursor-pointer">
                       <input
@@ -265,14 +279,14 @@ export default function ContactPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mensaje *
+                    {t('forms.message')} *
                   </label>
                   <textarea
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     rows="5"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    placeholder="¿En qué podemos ayudarte?"
+                    placeholder={language === 'es' ? '¿En qué podemos ayudarte?' : 'How can we help you?'}
                     required
                     disabled={submitting}
                   />
@@ -284,11 +298,11 @@ export default function ContactPage() {
                   className="w-full flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 transition font-bold text-base md:text-lg shadow-lg"
                 >
                   {submitting ? (
-                    <>Enviando...</>
+                    <>{language === 'es' ? 'Enviando...' : 'Sending...'}</>
                   ) : (
                     <>
                       <Send className="w-5 h-5" />
-                      Enviar mensaje
+                      {language === 'es' ? 'Enviar mensaje' : 'Send message'}
                     </>
                   )}
                 </button>
