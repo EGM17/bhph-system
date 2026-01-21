@@ -8,7 +8,8 @@ export default function SEO({
   image, 
   type = 'website',
   article = null,
-  noindex = false
+  noindex = false,
+  disableAlternates = false // 🆕 NUEVO: Para posts de blog sin traducción
 }) {
   const { language } = useLanguage();
   const baseUrl = window.location.origin;
@@ -28,7 +29,7 @@ export default function SEO({
   
   const metaDescription = description || defaultDescription;
   
-  // Imagen por defecto (puedes cambiar esto)
+  // Imagen por defecto
   const defaultImage = `${baseUrl}/default-og-image.jpg`;
   const metaImage = image || defaultImage;
   
@@ -36,11 +37,73 @@ export default function SEO({
   const locale = language === 'es' ? 'es_ES' : 'en_US';
   const alternateLocale = language === 'es' ? 'en_US' : 'es_ES';
   
-  // URLs alternativas para hreflang
-  const esPath = currentPath.replace('/en/', '/es/');
-  const enPath = currentPath.replace('/es/', '/en/');
-  const esUrl = `${baseUrl}${esPath}`;
-  const enUrl = `${baseUrl}${enPath}`;
+  // 🔥 Detectar si es un post de blog (por la ruta)
+  const isBlogPost = currentPath.includes('/blog/') && currentPath.split('/').length > 3;
+  
+  // 🔥 Si es post de blog sin traducción, desactivar alternates
+  const shouldDisableAlternates = disableAlternates || isBlogPost;
+  
+  // 🔥 Construir URLs alternativas correctamente (solo si NO es post de blog)
+  const buildAlternateUrl = (targetLang) => {
+    // Mapeo de rutas según idioma
+    const routeMap = {
+      es: {
+        '/en': '/es',
+        '/en/inventory': '/es/inventario',
+        '/en/financing': '/es/financiamiento',
+        '/en/contact': '/es/contacto',
+        '/en/blog': '/es/blog'
+      },
+      en: {
+        '/es': '/en',
+        '/es/inventario': '/en/inventory',
+        '/es/financiamiento': '/en/financing',
+        '/es/contacto': '/en/contact',
+        '/es/blog': '/en/blog'
+      }
+    };
+
+    // Si es la página home
+    if (currentPath === '/es' || currentPath === '/en' || currentPath === '/') {
+      return `${baseUrl}/${targetLang}`;
+    }
+
+    // Para rutas dinámicas (vehículos)
+    const pathParts = currentPath.split('/').filter(Boolean);
+    
+    if (pathParts.length >= 3 && pathParts[1] !== 'blog') {
+      // Es una ruta dinámica de vehículo (ej: /es/inventario/abc123)
+      const currentLang = pathParts[0]; // 'es' o 'en'
+      const section = pathParts[1]; // 'inventario', 'inventory', etc
+      const dynamicPart = pathParts.slice(2).join('/'); // 'abc123'
+      
+      // Traducir la sección
+      let translatedSection = section;
+      if (targetLang === 'es') {
+        if (section === 'inventory') translatedSection = 'inventario';
+      } else {
+        if (section === 'inventario') translatedSection = 'inventory';
+      }
+      
+      return `${baseUrl}/${targetLang}/${translatedSection}/${dynamicPart}`;
+    }
+
+    // Para rutas estáticas, usar el mapeo
+    const mappedRoute = routeMap[targetLang][currentPath];
+    if (mappedRoute) {
+      return `${baseUrl}${mappedRoute}`;
+    }
+
+    // Fallback: Simple replace
+    if (targetLang === 'es') {
+      return `${baseUrl}${currentPath.replace('/en/', '/es/').replace('/en', '/es')}`;
+    } else {
+      return `${baseUrl}${currentPath.replace('/es/', '/en/').replace('/es', '/en')}`;
+    }
+  };
+
+  const esUrl = !shouldDisableAlternates ? buildAlternateUrl('es') : fullUrl;
+  const enUrl = !shouldDisableAlternates ? buildAlternateUrl('en') : fullUrl;
 
   return (
     <Helmet>
@@ -51,13 +114,23 @@ export default function SEO({
         <meta name="keywords" content={keywords.join(', ')} />
       )}
       
-      {/* Canonical URL */}
+      {/* 🔥 CRÍTICO: Canonical URL - Siempre es la URL ACTUAL */}
       <link rel="canonical" href={fullUrl} />
       
-      {/* Hreflang Tags (idiomas alternativos) */}
-      <link rel="alternate" hreflang="es" href={esUrl} />
-      <link rel="alternate" hreflang="en" href={enUrl} />
-      <link rel="alternate" hreflang="x-default" href={esUrl} />
+      {/* 🔥 Hreflang Tags - Solo si NO es post de blog sin traducción */}
+      {!shouldDisableAlternates ? (
+        <>
+          <link rel="alternate" hreflang="es" href={esUrl} />
+          <link rel="alternate" hreflang="en" href={enUrl} />
+          <link rel="alternate" hreflang="x-default" href={language === 'es' ? esUrl : enUrl} />
+        </>
+      ) : (
+        <>
+          {/* Para posts de blog: Solo el idioma actual */}
+          <link rel="alternate" hreflang={language} href={fullUrl} />
+          <link rel="alternate" hreflang="x-default" href={fullUrl} />
+        </>
+      )}
       
       {/* Robots */}
       {noindex && <meta name="robots" content="noindex, nofollow" />}
@@ -66,24 +139,18 @@ export default function SEO({
       <meta property="og:type" content={type} />
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={metaDescription} />
+      <meta property="og:image" content={metaImage} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:site_name" content={siteName} />
       <meta property="og:locale" content={locale} />
       <meta property="og:locale:alternate" content={alternateLocale} />
-      {metaImage && <meta property="og:image" content={metaImage} />}
-      {metaImage && <meta property="og:image:width" content="1200" />}
-      {metaImage && <meta property="og:image:height" content="630" />}
       
-      {/* Twitter Card */}
-      <meta name="twitter:card" content="summary_large_image" />
-      <meta name="twitter:title" content={fullTitle} />
-      <meta name="twitter:description" content={metaDescription} />
-      {metaImage && <meta name="twitter:image" content={metaImage} />}
-      
-      {/* Article específico (para posts de blog) */}
+      {/* Article Meta (si es un post de blog) */}
       {article && type === 'article' && (
         <>
-          <meta property="article:published_time" content={article.publishedTime} />
+          {article.publishedTime && (
+            <meta property="article:published_time" content={article.publishedTime} />
+          )}
           {article.modifiedTime && (
             <meta property="article:modified_time" content={article.modifiedTime} />
           )}
@@ -93,13 +160,21 @@ export default function SEO({
           {article.section && (
             <meta property="article:section" content={article.section} />
           )}
-          {article.tags && article.tags.length > 0 && 
-            article.tags.map((tag, index) => (
-              <meta key={index} property="article:tag" content={tag} />
-            ))
-          }
+          {article.tags && article.tags.map((tag, index) => (
+            <meta key={index} property="article:tag" content={tag} />
+          ))}
         </>
       )}
+      
+      {/* Twitter Card */}
+      <meta name="twitter:card" content="summary_large_image" />
+      <meta name="twitter:title" content={fullTitle} />
+      <meta name="twitter:description" content={metaDescription} />
+      <meta name="twitter:image" content={metaImage} />
+      
+      {/* Additional SEO */}
+      <meta name="author" content={siteName} />
+      <meta httpEquiv="Content-Language" content={language} />
     </Helmet>
   );
 }
