@@ -1,12 +1,31 @@
 import { DollarSign, CheckCircle, Clock, Users } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
-import { Link } from 'react-router-dom'; // 🆕 NUEVO
+import { useLanguage } from '../../context/LanguageContext';
+import { Link } from 'react-router-dom';
+import SEO from '../../components/SEO';
 
 export default function FinancingPage() {
-  const { language, t } = useLanguage(); // 🆕 NUEVO
+  const { language, t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title={language === 'es' ? 'Financiamiento' : 'Financing'}
+        description={
+          language === 'es'
+            ? 'Opciones de financiamiento flexibles en Salem, Oregon. Buy Here Pay Here sin revisar crédito. Aprobación el mismo día sin importar tu historial.'
+            : 'Flexible financing options in Salem, Oregon. Buy Here Pay Here with no credit check. Same-day approval regardless of your credit history.'
+        }
+        keywords={[
+          'financiamiento sin credito',
+          'buy here pay here',
+          'aprobacion garantizada',
+          'financing salem oregon',
+          'no credit check',
+          'bad credit financing'
+        ]}
+        type="website"
+      />
+
       {/* Hero de Financiamiento */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -124,8 +143,8 @@ export default function FinancingPage() {
                 </h4>
                 <p className="text-sm text-gray-600">
                   {language === 'es' 
-                    ? 'Licencia de conducir, identificación estatal o de tu país.' 
-                    : "Driver's license, state ID or ID from your country."}
+                    ? 'Licencia de conducir, identificación estatal o de tu país.'
+                    : 'Driver\'s license, state ID or ID from your country.'}
                 </p>
               </div>
             </div>
@@ -134,12 +153,12 @@ export default function FinancingPage() {
               <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
               <div>
                 <h4 className="text-base md:text-lg font-semibold text-gray-900">
-                  {language === 'es' ? 'Enganche mínimo' : 'Minimum Down Payment'}
+                  {language === 'es' ? 'Comprobante de ingresos' : 'Proof of Income'}
                 </h4>
                 <p className="text-sm text-gray-600">
                   {language === 'es' 
-                    ? 'Solamente debes cubrir el enganche correspondiente' 
-                    : 'You only need to cover the corresponding down payment'}
+                    ? 'Talones de cheque o carta de empleador.'
+                    : 'Pay stubs or employer letter.'}
                 </p>
               </div>
             </div>
@@ -148,12 +167,12 @@ export default function FinancingPage() {
               <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
               <div>
                 <h4 className="text-base md:text-lg font-semibold text-gray-900">
-                  {language === 'es' ? 'Comprobante de Domicilio' : 'Proof of Address'}
+                  {language === 'es' ? 'Comprobante de domicilio' : 'Proof of Address'}
                 </h4>
                 <p className="text-sm text-gray-600">
                   {language === 'es' 
-                    ? 'Recibo de luz, agua o renta' 
-                    : 'Utility bill, water or rent receipt'}
+                    ? 'Factura de servicios o contrato de renta.'
+                    : 'Utility bill or rental agreement.'}
                 </p>
               </div>
             </div>
@@ -166,8 +185,8 @@ export default function FinancingPage() {
                 </h4>
                 <p className="text-sm text-gray-600">
                   {language === 'es' 
-                    ? 'Nombres y teléfonos de al menos 3 referencias' 
-                    : 'Names and phone numbers of at least 3 references'}
+                    ? '2-3 referencias personales con números de teléfono.'
+                    : '2-3 personal references with phone numbers.'}
                 </p>
               </div>
             </div>
@@ -177,112 +196,86 @@ export default function FinancingPage() {
         {/* Preguntas Frecuentes */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-16">
           <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-8 text-center">
-            {language === 'es' ? 'Preguntas frecuentes' : 'Frequently Asked Questions'}
+            {language === 'es' ? 'Preguntas Frecuentes' : 'Frequently Asked Questions'}
           </h2>
 
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {language === 'es' 
-                  ? '¿Qué pasa si tengo mal crédito?' 
-                  : 'What if I have bad credit?'}
+                  ? '¿Necesito tener crédito?' 
+                  : 'Do I need credit?'}
               </h3>
-              <p className="text-sm md:text-base text-gray-600">
+              <p className="text-gray-600">
                 {language === 'es'
-                  ? '¡No hay problema! Cuando financiamos en casa, no checamos crédito. Solo te pedimos tu identificación válida, un comprobante de domicilio, el enganche y las referencias. ¡Estamos al servicio de toda la comunidad!'
-                  : 'No problem! When we finance in-house, we don\'t check credit. We only ask for your valid ID, proof of address, down payment and references. We are at the service of the entire community!'}
+                  ? 'No. Aprobamos a todos sin importar el historial de crédito. Incluso si nunca has tenido crédito o si tu crédito es malo, puedes calificar.'
+                  : 'No. We approve everyone regardless of credit history. Even if you\'ve never had credit or if your credit is bad, you can qualify.'}
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {language === 'es' 
                   ? '¿Cuánto necesito de enganche?' 
-                  : 'How much do I need for a down payment?'}
+                  : 'How much do I need for down payment?'}
               </h3>
-              <p className="text-sm md:text-base text-gray-600">
+              <p className="text-gray-600">
                 {language === 'es'
-                  ? 'El enganche varía según el vehículo que elijas. Generalmente oscila entre $500 y $2,000. Mientras mayor sea tu enganche, menor será tu pago mensual.'
-                  : 'The down payment varies depending on the vehicle you choose. It generally ranges from $500 to $2,000. The larger your down payment, the lower your monthly payment will be.'}
+                  ? 'Los enganches comienzan desde $500, dependiendo del vehículo que elijas. Trabajamos contigo para encontrar un plan que se ajuste a tu presupuesto.'
+                  : 'Down payments start from $500, depending on the vehicle you choose. We work with you to find a plan that fits your budget.'}
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {language === 'es' 
-                  ? '¿Cuánto tiempo tardo en llevarme el auto?' 
-                  : 'How long does it take to get the car?'}
+                  ? '¿Puedo llevarme el auto el mismo día?' 
+                  : 'Can I take the car the same day?'}
               </h3>
-              <p className="text-sm md:text-base text-gray-600">
+              <p className="text-gray-600">
                 {language === 'es'
-                  ? '¡El mismo día! La mayoría de nuestros clientes salen manejando su auto el mismo día que nos visitan. Solo necesitas traer los documentos requeridos y el enganche.'
-                  : 'Same day! Most of our customers drive away with their car the same day they visit us. You just need to bring the required documents and the down payment.'}
+                  ? '¡Sí! Una vez aprobado y con el enganche, puedes manejar tu auto el mismo día. El proceso es rápido y sencillo.'
+                  : 'Yes! Once approved and with the down payment, you can drive your car the same day. The process is quick and simple.'}
               </p>
             </div>
 
             <div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
                 {language === 'es' 
-                  ? '¿Qué pasa si no tengo SSN o ITIN?' 
-                  : 'What if I don\'t have SSN or ITIN?'}
+                  ? '¿Los pagos ayudan a mejorar mi crédito?' 
+                  : 'Do payments help improve my credit?'}
               </h3>
-              <p className="text-sm md:text-base text-gray-600">
+              <p className="text-gray-600">
                 {language === 'es'
-                  ? '¡No hay problema! No requerimos SSN ni ITIN para aprobarte. Solo necesitas una identificación válida de cualquier país, un comprobante de domicilio y tus referencias personales.'
-                  : 'No problem! We don\'t require SSN or ITIN to approve you. You only need a valid ID from any country, proof of address and your personal references.'}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
-                {language === 'es' 
-                  ? '¿Cobran intereses?' 
-                  : 'Do you charge interest?'}
-              </h3>
-              <p className="text-sm md:text-base text-gray-600">
-                {language === 'es'
-                  ? 'No, no cobramos intereses. El precio que ves es el precio final. Tu pago mensual es fijo y no aumenta con el tiempo.'
-                  : 'No, we don\'t charge interest. The price you see is the final price. Your monthly payment is fixed and doesn\'t increase over time.'}
-              </p>
-            </div>
-
-            <div>
-              <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">
-                {language === 'es' 
-                  ? '¿Puedo traer mi propio mecánico para revisar el auto?' 
-                  : 'Can I bring my own mechanic to inspect the car?'}
-              </h3>
-              <p className="text-sm md:text-base text-gray-600">
-                {language === 'es'
-                  ? '¡Por supuesto! Estamos completamente de acuerdo en que traigas tu mecánico de confianza para que revise el vehículo antes de comprarlo.'
-                  : 'Of course! We completely agree that you should bring your trusted mechanic to inspect the vehicle before buying it.'}
+                  ? 'Sí. Reportamos tus pagos a las agencias de crédito, lo que te ayuda a construir o reconstruir tu historial crediticio con cada pago puntual.'
+                  : 'Yes. We report your payments to credit bureaus, which helps you build or rebuild your credit history with each on-time payment.'}
               </p>
             </div>
           </div>
         </div>
 
         {/* CTA Final */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-xl p-8 text-center text-white">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-2xl p-8 md:p-12 text-center text-white">
+          <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-4">
             {language === 'es' 
-              ? '¿Listo para manejar tu próximo auto?' 
-              : 'Ready to drive your next car?'}
+              ? '¿Listo para empezar?' 
+              : 'Ready to get started?'}
           </h2>
-          <p className="text-base md:text-xl text-blue-100 mb-8">
-            {language === 'es' 
-              ? 'Visítanos hoy o llámanos para más información' 
-              : 'Visit us today or call us for more information'}
+          <p className="text-lg md:text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+            {language === 'es'
+              ? 'Visítanos hoy mismo y obtén la aprobación en minutos. ¡Tu nuevo auto te está esperando!'
+              : 'Visit us today and get approved in minutes. Your new car is waiting for you!'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               to={language === 'es' ? '/es/inventario' : '/en/inventory'}
-              className="px-8 py-4 bg-white text-blue-700 rounded-xl hover:bg-blue-50 transition font-bold text-lg shadow-2xl"
+              className="inline-block px-8 py-4 bg-white text-blue-600 rounded-lg font-bold hover:bg-gray-100 transition text-lg shadow-lg"
             >
-              {language === 'es' ? 'Ver inventario' : 'View Inventory'}
+              {language === 'es' ? 'Ver Inventario' : 'View Inventory'}
             </Link>
             <Link
               to={language === 'es' ? '/es/contacto' : '/en/contact'}
-              className="px-8 py-4 bg-transparent border-2 border-white text-white rounded-xl hover:bg-white/10 transition font-bold text-lg"
+              className="inline-block px-8 py-4 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-400 transition text-lg border-2 border-white"
             >
               {language === 'es' ? 'Contáctanos' : 'Contact Us'}
             </Link>

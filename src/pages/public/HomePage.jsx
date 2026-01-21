@@ -1,14 +1,32 @@
 import Hero from '../../components/public/Hero';
 import FeaturedVehicles from '../../components/public/FeaturedVehicles';
+import SEO from '../../components/SEO';
+import { useLanguage } from '../../context/LanguageContext';
 import { CheckCircle, DollarSign, Clock } from 'lucide-react';
-import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
-import { Link } from 'react-router-dom'; // 🆕 NUEVO
+import { Link } from 'react-router-dom';
 
 export default function HomePage() {
-  const { language } = useLanguage(); // 🆕 NUEVO
+  const { language } = useLanguage();
 
   return (
     <div>
+      <SEO 
+        title={language === 'es' ? 'Inicio' : 'Home'}
+        description={
+          language === 'es'
+            ? 'Financiamiento fácil y rápido para autos en Salem, Oregon. Buy Here Pay Here sin revisar crédito. Aprobación garantizada el mismo día.'
+            : 'Easy and fast car financing in Salem, Oregon. Buy Here Pay Here with no credit check. Same-day approval guaranteed.'
+        }
+        keywords={[
+          'buy here pay here salem',
+          'financiamiento autos salem',
+          'autos sin credito',
+          'comprar auto salem oregon',
+          'carros baratos salem'
+        ]}
+        type="website"
+      />
+
       <Hero />
       <FeaturedVehicles />
       
@@ -68,7 +86,7 @@ export default function HomePage() {
               <p className="text-base md:text-base text-gray-600 px-4">
                 {language === 'es'
                   ? 'Planes de pago ajustados a tu presupuesto y sin intereses'
-                  : 'Payment plans tailored to your budget and interest-free'}
+                  : 'Payment plans adjusted to your budget with no interest'}
               </p>
             </div>
           </div>
@@ -79,35 +97,21 @@ export default function HomePage() {
       <section className="py-16 bg-gradient-to-r from-blue-600 to-blue-700 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-6 px-8">
-            {language === 'es' ? (
-              <>
-                ¿Listo para manejar<br className="sm:hidden" /> un nuevo auto?
-              </>
-            ) : (
-              <>
-                Ready to drive<br className="sm:hidden" /> a new car?
-              </>
-            )}
+            {language === 'es' 
+              ? '¿Listo para manejar un nuevo auto?' 
+              : 'Ready to drive a new car?'}
           </h2>
-          <p className="text-base md:text-lg lg:text-lg mb-8 px-6 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl mb-8 px-4">
             {language === 'es'
-              ? 'Visítanos hoy o llámanos para comenzar tu proceso de financiamiento'
-              : 'Visit us today or call us to start your financing process'}
+              ? 'Visítanos hoy mismo y obtén la aprobación en minutos'
+              : 'Visit us today and get approved in minutes'}
           </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center px-4">
-            <Link
-              to={language === 'es' ? '/es/inventario' : '/en/inventory'}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-blue-700 rounded-lg hover:bg-gray-100 transition font-semibold shadow-lg"
-            >
-              {language === 'es' ? 'Ver inventario' : 'View Inventory'}
-            </Link>
-            <a
-              href="tel:+15038789550"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent border-2 border-white text-white rounded-lg hover:bg-white/10 transition font-semibold"
-            >
-              {language === 'es' ? 'Llamar ahora' : 'Call Now'}
-            </a>
-          </div>
+          <Link
+            to={language === 'es' ? '/es/contacto' : '/en/contact'}
+            className="inline-block bg-white text-blue-600 px-8 py-4 rounded-lg font-semibold hover:bg-gray-100 transition text-lg"
+          >
+            {language === 'es' ? 'Contáctanos ahora' : 'Contact Us Now'}
+          </Link>
         </div>
       </section>
     </div>

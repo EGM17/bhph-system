@@ -26,7 +26,7 @@ const DEFAULT_TRANSLATIONS = {
     },
     // Hero Section
     hero: {
-      title: '¡Encuentra tu auto ideal hoy!',
+      title: 'Financi',
       subtitle: 'Ofrecemos financiamiento fácil y rápido en vehículos seminuevos. Sin revisar crédito, sin ITIN, sin SSN, sin licencia y sin intereses.',
       cta: 'Ver Inventario'
     },

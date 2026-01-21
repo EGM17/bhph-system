@@ -1,8 +1,10 @@
 import { ArrowRight, MapPin, Gauge } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { formatVehicleTitle } from '../../services/vinService';
+import { useLanguage } from '../../context/LanguageContext';
 
-export default function VehicleCard({ vehicle, language = 'es' }) {
+export default function VehicleCard({ vehicle }) {
+  const { language } = useLanguage();
   const primaryImage = vehicle.images?.find(img => img.isPrimary) || vehicle.images?.[0];
   const title = formatVehicleTitle(vehicle);
   const isInHouseFinancing = vehicle.financingType === 'in-house';

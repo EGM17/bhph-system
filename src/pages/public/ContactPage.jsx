@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { MapPin, Phone, Mail, Clock, Send, CheckCircle, AlertCircle } from 'lucide-react';
 import { createLead } from '../../services/leadService';
-import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
+import { useLanguage } from '../../context/LanguageContext';
+import SEO from '../../components/SEO';
 
 export default function ContactPage() {
-  const { language, t } = useLanguage(); // 🆕 NUEVO
+  const { language, t } = useLanguage();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -58,6 +59,23 @@ export default function ContactPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO 
+        title={language === 'es' ? 'Contacto' : 'Contact'}
+        description={
+          language === 'es'
+            ? 'Contáctanos en El Compa Güero Auto Sales. Visítanos en 915 12th St SE, Salem, OR 97302 o llámanos para más información sobre financiamiento.'
+            : 'Contact El Compa Güero Auto Sales. Visit us at 915 12th St SE, Salem, OR 97302 or call us for more information about financing.'
+        }
+        keywords={[
+          'contacto salem auto',
+          'direccion el compa guero',
+          'telefono auto sales salem',
+          '915 12th st se salem',
+          'contact salem oregon'
+        ]}
+        type="website"
+      />
+
       {/* Hero */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { loadTranslations } from '../services/translationService'; // 🆕 NUEVO
+import { loadTranslations } from '../services/translationService';
 
 const LanguageContext = createContext();
 
@@ -15,11 +15,11 @@ export const useLanguage = () => {
 export const LanguageProvider = ({ children }) => {
   const [language, setLanguage] = useState('es');
   const [translations, setTranslations] = useState({});
-  const [loading, setLoading] = useState(true); // 🆕 NUEVO
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 🆕 NUEVO: Cargar traducciones desde Firestore al iniciar
+  // Cargar traducciones desde Firestore al iniciar
   useEffect(() => {
     const fetchTranslations = async () => {
       try {
@@ -42,8 +42,13 @@ export const LanguageProvider = ({ children }) => {
     if (pathLang === 'en' || pathLang === 'es') {
       setLanguage(pathLang);
     } else {
-      setLanguage('es'); // Default español
+      setLanguage('es');
     }
+  }, [location.pathname]);
+
+  // 🔥 CRÍTICO: Resetear scroll cuando cambia la ruta
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, [location.pathname]);
 
   // Cambiar idioma y actualizar URL
@@ -53,7 +58,6 @@ export const LanguageProvider = ({ children }) => {
     const currentPath = location.pathname;
     const pathParts = currentPath.split('/').filter(Boolean);
     
-    // Si la primera parte es un idioma, reemplazarlo
     if (pathParts[0] === 'es' || pathParts[0] === 'en') {
       pathParts[0] = newLang;
     } else {
@@ -89,25 +93,13 @@ export const LanguageProvider = ({ children }) => {
     t,
     translations,
     setTranslations,
-    loading, // 🆕 NUEVO
+    loading,
     isSpanish: language === 'es',
     isEnglish: language === 'en'
   };
 
-  // 🆕 NUEVO: Mostrar loading mientras cargan traducciones
-  if (loading) {
-    return (
-      <LanguageContext.Provider value={value}>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Cargando...</p>
-          </div>
-        </div>
-      </LanguageContext.Provider>
-    );
-  }
-
+  // 🔥 CAMBIO: Renderizar children aunque esté loading
+  // El loading screen (si es necesario) debe estar en App.jsx, NO aquí
   return (
     <LanguageContext.Provider value={value}>
       {children}

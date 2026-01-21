@@ -3,11 +3,11 @@ import { ChevronLeft, ChevronRight, ArrowRight, MapPin, Gauge } from 'lucide-rea
 import { Link } from 'react-router-dom';
 import { useFeaturedVehicles } from '../../hooks/usePublicVehicles';
 import { formatVehicleTitle } from '../../services/vinService';
-import { useLanguage } from '../../context/LanguageContext'; // 🆕 NUEVO
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function FeaturedVehicles() {
   const { vehicles, loading } = useFeaturedVehicles(6);
-  const { language } = useLanguage(); // 🆕 NUEVO
+  const { language } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [touchStart, setTouchStart] = useState(0);
   const [touchEnd, setTouchEnd] = useState(0);
@@ -159,7 +159,7 @@ export default function FeaturedVehicles() {
   );
 }
 
-// Vehicle Card Component
+// 🔥 COMPONENTE INTERNO CORREGIDO
 function VehicleCard({ vehicle, language }) {
   const primaryImage = vehicle.images?.find(img => img.isPrimary) || vehicle.images?.[0];
   const title = formatVehicleTitle(vehicle);
@@ -168,7 +168,7 @@ function VehicleCard({ vehicle, language }) {
 
   return (
     <Link 
-      to={`${language === 'es' ? '/es' : '/en'}/inventario/${vehicle.id}`}
+      to={`${language === 'es' ? '/es/inventario' : '/en/inventory'}/${vehicle.id}`}
       className="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden block border border-gray-100"
     >
       {/* Image */}
