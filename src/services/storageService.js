@@ -60,29 +60,85 @@ export const uploadVehicleImage = async (file, vehicleId, index) => {
 };
 
 /**
- * Sube múltiples imágenes en paralelo
- * @param {FileList|Array} files - Lista de archivos
+ * ✅ FIXED: Sube múltiples imágenes en paralelo con validación mejorada
+ * Ahora maneja objetos {file, url}, Files directos, URLs y undefined
+ * @param {FileList|Array} files - Lista de archivos (pueden ser File, {file: File}, o URLs)
  * @param {string} vehicleId - ID del vehículo
  * @param {Function} onProgress - Callback de progreso (opcional)
  * @returns {Promise<Array>} Array de objetos con información de imágenes
  */
 export const uploadMultipleImages = async (files, vehicleId, onProgress) => {
-  const filesArray = Array.from(files);
-  const uploadPromises = filesArray.map((file, index) => 
-    uploadVehicleImage(file, vehicleId, index)
-      .then(result => {
+  try {
+    console.log('📤 uploadMultipleImages iniciado:', { filesCount: files.length, vehicleId });
+    
+    const filesArray = Array.from(files);
+    const uploadPromises = filesArray.map(async (item, index) => {
+      // ✅ FIX: Validar que item no sea undefined o null
+      if (!item) {
+        console.warn(`⚠️ Item ${index} es undefined o null, saltando...`);
+        return null;
+      }
+
+      // ✅ FIX: Si es una URL de string (imagen existente), retornarla tal cual
+      if (typeof item === 'string') {
+        if (item.startsWith('http://') || item.startsWith('https://')) {
+          console.log(`♻️ Item ${index} es URL existente:`, item);
+          return { url: item, order: index, isPrimary: index === 0 };
+        } else {
+          console.warn(`⚠️ Item ${index} es string pero no es URL válida:`, item);
+          return null;
+        }
+      }
+
+      // ✅ FIX: Si es un objeto con propiedad .url (imagen ya subida)
+      if (item.url && typeof item.url === 'string') {
+        console.log(`♻️ Item ${index} ya tiene URL:`, item.url);
+        return { ...item, order: index, isPrimary: index === 0 };
+      }
+
+      // ✅ FIX: Si es un objeto con propiedad .file (de ImageUploader)
+      let fileToUpload;
+      if (item.file && item.file instanceof File) {
+        fileToUpload = item.file;
+        console.log(`📤 Item ${index} tiene .file (ImageUploader):`, fileToUpload.name);
+      } 
+      // ✅ FIX: Si es directamente un File
+      else if (item instanceof File) {
+        fileToUpload = item;
+        console.log(`📤 Item ${index} es File directo:`, fileToUpload.name);
+      } 
+      // Si no es nada reconocible, saltar
+      else {
+        console.warn(`⚠️ Item ${index} no es reconocible:`, typeof item, item);
+        return null;
+      }
+
+      // Subir el archivo
+      try {
+        const result = await uploadVehicleImage(fileToUpload, vehicleId, index);
+        
         if (onProgress) {
           onProgress(index + 1, filesArray.length);
         }
+        
+        console.log(`✅ Item ${index} subido exitosamente:`, result.url);
         return { ...result, order: index, isPrimary: index === 0 };
-      })
-  );
+      } catch (error) {
+        console.error(`❌ Error subiendo item ${index}:`, error);
+        throw error;
+      }
+    });
 
-  try {
     const results = await Promise.all(uploadPromises);
-    return results;
+    
+    // ✅ FIX: Filtrar nulls del resultado
+    const validResults = results.filter(result => result !== null);
+    
+    console.log(`✅ uploadMultipleImages completado: ${validResults.length}/${filesArray.length} exitosas`);
+    return validResults;
+    
   } catch (error) {
-    console.error('Error subiendo múltiples imágenes:', error);
+    console.error('❌ Error en uploadMultipleImages:', error);
     throw error;
   }
 };

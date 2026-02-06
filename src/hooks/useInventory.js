@@ -8,7 +8,7 @@ import {
   markAsSold,
   getInventoryStats
 } from '../services/inventoryService';
-import { deleteAllVehicleImages } from '../services/storageService';
+import { deleteAllVehicleImages, uploadMultipleImages } from '../services/storageService';
 
 /**
  * Hook personalizado para manejar el inventario de vehículos
@@ -48,25 +48,82 @@ export const useInventory = () => {
     }
   };
 
+  // ✅ FIX: addVehicle ahora maneja las imágenes correctamente
   const addVehicle = async (vehicleData) => {
     try {
-      const vehicleId = await createVehicle(vehicleData);
+      const { images, ...dataWithoutImages } = vehicleData;
+      
+      // 1. Crear vehículo SIN imágenes
+      const vehicleId = await createVehicle({
+        ...dataWithoutImages,
+        images: []
+      });
+      
+      console.log('✅ Vehículo creado con ID:', vehicleId);
+      
+      // 2. Subir imágenes con el ID del vehículo
+      if (images && images.length > 0) {
+        console.log(`📤 Subiendo ${images.length} imágenes para vehículo ${vehicleId}`);
+        const processedImages = await uploadMultipleImages(images, vehicleId);
+        
+        // ✅ FIX: Guardar como objetos con estructura correcta
+        const imageObjects = processedImages.map((img, index) => ({
+          url: img.url,
+          order: index,
+          isPrimary: index === 0
+        }));
+        
+        // 3. Actualizar vehículo con array de objetos
+        await updateVehicle(vehicleId, { images: imageObjects });
+        console.log('✅ Imágenes añadidas al vehículo:', imageObjects);
+      }
+      
+      // 4. Recargar lista
       await loadVehicles();
       await loadStats();
+      
       return vehicleId;
     } catch (err) {
       setError(err.message);
+      console.error('❌ Error en addVehicle:', err);
       throw err;
     }
   };
 
+  // ✅ FIX: editVehicle ahora maneja las imágenes correctamente
   const editVehicle = async (vehicleId, updates) => {
     try {
-      await updateVehicle(vehicleId, updates);
+      const { images, ...dataWithoutImages } = updates;
+      
+      // Si hay imágenes para procesar
+      if (images && images.length > 0) {
+        console.log(`📤 Procesando ${images.length} imágenes para vehículo ${vehicleId}`);
+        const processedImages = await uploadMultipleImages(images, vehicleId);
+        
+        // ✅ FIX: Guardar como objetos con estructura correcta
+        const imageObjects = processedImages.map((img, index) => ({
+          url: img.url,
+          order: index,
+          isPrimary: index === 0
+        }));
+        
+        // Actualizar con array de objetos
+        await updateVehicle(vehicleId, {
+          ...dataWithoutImages,
+          images: imageObjects
+        });
+        
+        console.log('✅ Imágenes actualizadas:', imageObjects);
+      } else {
+        // Actualizar sin tocar imágenes
+        await updateVehicle(vehicleId, dataWithoutImages);
+      }
+      
       await loadVehicles();
       await loadStats();
     } catch (err) {
       setError(err.message);
+      console.error('❌ Error en editVehicle:', err);
       throw err;
     }
   };

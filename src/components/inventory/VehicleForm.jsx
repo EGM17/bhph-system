@@ -2,13 +2,10 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, Eye, Loader } from 'lucide-react';
 import VINDecoder from './VINDecoder';
 import ImageUploader from './ImageUploader';
-import { uploadMultipleImages } from '../../services/storageService';
-import { createVehicle, updateVehicle } from '../../services/inventoryService';
 import { formatVehicleTitle } from '../../services/vinService';
 
 export default function VehicleForm({ vehicle, onSave, onCancel }) {
   const [formData, setFormData] = useState(vehicle || {
-    // Información del VIN (autocompletada)
     vin: '',
     stockNumber: '',
     make: '',
@@ -17,31 +14,19 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     trim: '',
     bodyClass: '',
     mpg: '',
-    
-    // Información del dealer
     price: 0,
     showPrice: true,
     mileage: 0,
     condition: 'used',
     status: 'available',
-    
-    // Tipo de financiamiento
     financingType: 'in-house',
-    
-    // Imágenes
     images: [],
-    
-    // Descripción
     description: '',
     features: [],
-    
-    // Financiamiento
     downPaymentFrom: 0,
     monthlyPaymentFrom: 0,
     showDownPayment: true,
     showMonthlyPayment: true,
-    
-    // Metadata
     isFeatured: false,
     isPublished: false
   });
@@ -94,7 +79,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     }));
   };
 
-  // 🔧 FIX: Nuevo flujo corregido para evitar carpetas temp
+  // ✅ SOLUCIÓN: VehicleForm NO crea vehículos, solo prepara datos
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -111,60 +96,18 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
     setSaving(true);
 
     try {
-      // Separar imágenes nuevas y existentes
-      const newImages = images.filter(img => img.file);
-      const existingImages = images.filter(img => img.url && !img.file);
+      console.log('📝 Preparando datos del vehículo');
+      
+      // ✅ Simplemente pasar los datos al padre
+      // El padre (useInventory) maneja la creación/actualización y subida de imágenes
+      const vehicleDataToSave = {
+        ...formData,
+        images: images  // Pasar array completo de imágenes
+      };
 
-      let vehicleId = vehicle?.id; // Si existe, usar el ID actual
-      let imageUrls = existingImages; // Empezar con las imágenes existentes
-
-      // ✅ CASO 1: EDITAR vehículo existente
-      if (vehicle) {
-        // Si hay imágenes nuevas, subirlas con el ID existente
-        if (newImages.length > 0) {
-          console.log(`📤 Subiendo ${newImages.length} imágenes nuevas para vehículo ${vehicleId}`);
-          const uploadedUrls = await uploadMultipleImages(newImages, vehicleId);
-          imageUrls = [...existingImages, ...uploadedUrls];
-        }
-
-        // Actualizar vehículo
-        const updatedData = {
-          ...formData,
-          images: imageUrls
-        };
-
-        const updated = await updateVehicle(vehicleId, updatedData);
-        console.log('✅ Vehículo actualizado:', updated);
-        onSave(updated);
-      } 
-      // ✅ CASO 2: CREAR nuevo vehículo
-      else {
-        // Crear vehículo primero (sin imágenes)
-        const vehicleData = {
-          ...formData,
-          images: [] // Vacío por ahora
-        };
-
-        const createdVehicle = await createVehicle(vehicleData);
-        vehicleId = createdVehicle.id;
-        console.log('✅ Vehículo creado con ID:', vehicleId);
-
-        // Subir imágenes con el ID del vehículo
-        if (newImages.length > 0) {
-          console.log(`📤 Subiendo ${newImages.length} imágenes para vehículo ${vehicleId}`);
-          const uploadedUrls = await uploadMultipleImages(newImages, vehicleId);
-          
-          // Actualizar vehículo con las URLs de las imágenes
-          const updatedWithImages = await updateVehicle(vehicleId, {
-            images: uploadedUrls
-          });
-          
-          console.log('✅ Vehículo actualizado con imágenes');
-          onSave(updatedWithImages);
-        } else {
-          onSave(createdVehicle);
-        }
-      }
+      await onSave(vehicleDataToSave);
+      
+      console.log('✅ Datos enviados exitosamente');
 
     } catch (error) {
       console.error('❌ Error guardando vehículo:', error);
@@ -235,12 +178,10 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           
-          {/* VIN Decoder - Solo si es nuevo */}
           {!vehicle && (
             <VINDecoder onVehicleDecoded={handleVehicleDecoded} />
           )}
 
-          {/* Resto del formulario - mantener igual */}
           {vinDecoded && (
             <>
               <div className="bg-white rounded-lg shadow p-6">
@@ -250,23 +191,18 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      VIN *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">VIN *</label>
                     <input
                       type="text"
                       name="vin"
                       value={formData.vin}
                       readOnly
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 font-mono text-sm cursor-not-allowed"
-                      title="El VIN no puede ser editado después de decodificar"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Número de Stock
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Número de Stock</label>
                     <input
                       type="text"
                       name="stockNumber"
@@ -278,9 +214,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Marca *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Marca *</label>
                     <input
                       type="text"
                       name="make"
@@ -292,9 +226,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Modelo *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Modelo *</label>
                     <input
                       type="text"
                       name="model"
@@ -306,25 +238,20 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Año *
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Año *</label>
                     <input
                       type="number"
                       name="year"
                       value={formData.year}
                       onChange={handleChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Ej: 2020"
                       min="1900"
                       max={new Date().getFullYear() + 1}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Versión/Trim
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Versión/Trim</label>
                     <input
                       type="text"
                       name="trim"
@@ -336,9 +263,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Carrocería
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Carrocería</label>
                     <input
                       type="text"
                       name="bodyClass"
@@ -350,9 +275,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Millaje (mi)
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Millaje (mi)</label>
                     <input
                       type="number"
                       name="mileage"
@@ -364,9 +287,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      MPG (Millas por galón)
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">MPG</label>
                     <input
                       type="text"
                       name="mpg"
@@ -378,9 +299,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Condición
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Condición</label>
                     <select
                       name="condition"
                       value={formData.condition}
@@ -394,9 +313,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Estado
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
                     <select
                       name="status"
                       value={formData.status}
@@ -411,7 +328,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 </div>
               </div>
 
-              {/* Precios y Financiamiento */}
+              {/* Precios */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
                   💰 Precios y Financiamiento
@@ -419,9 +336,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Precio del Vehículo
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Precio del Vehículo</label>
                     <div className="flex gap-2">
                       <div className="relative flex-1">
                         <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
@@ -440,7 +355,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                           name="showPrice"
                           checked={formData.showPrice}
                           onChange={handleChange}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300"
                         />
                         <span className="text-sm">Mostrar</span>
                       </label>
@@ -448,9 +363,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tipo de Financiamiento
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Financiamiento</label>
                     <select
                       name="financingType"
                       value={formData.financingType}
@@ -466,9 +379,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                   {formData.financingType === 'in-house' && (
                     <>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Enganche Desde
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Enganche Desde</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
@@ -487,7 +398,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                               name="showDownPayment"
                               checked={formData.showDownPayment}
                               onChange={handleChange}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="rounded border-gray-300"
                             />
                             <span className="text-sm">Mostrar</span>
                           </label>
@@ -495,9 +406,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Mensualidad Desde
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Mensualidad Desde</label>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
                             <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
@@ -516,22 +425,13 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                               name="showMonthlyPayment"
                               checked={formData.showMonthlyPayment}
                               onChange={handleChange}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              className="rounded border-gray-300"
                             />
                             <span className="text-sm">Mostrar</span>
                           </label>
                         </div>
                       </div>
                     </>
-                  )}
-
-                  {formData.financingType === 'in-house' && (
-                    <div className="md:col-span-2 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-800">
-                        <strong>💡 Tip sobre financiamiento:</strong> Los montos de enganche y mensualidad son valores "desde". 
-                        Puedes ocultar cualquier dato individualmente sin afectar los demás.
-                      </p>
-                    </div>
                   )}
                 </div>
               </div>
@@ -556,23 +456,19 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 
                 <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción del Vehículo
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
                     <textarea
                       name="description"
                       value={formData.description}
                       onChange={handleChange}
                       rows="6"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                      placeholder="Describe el vehículo, su estado, historial, etc..."
+                      placeholder="Describe el vehículo..."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Características Especiales
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Características Especiales</label>
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -580,12 +476,12 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                         onChange={(e) => setNewFeature(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddFeature())}
                         className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                        placeholder="Ej: Sistema de navegación GPS"
+                        placeholder="Ej: GPS"
                       />
                       <button
                         type="button"
                         onClick={handleAddFeature}
-                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                       >
                         Agregar
                       </button>
@@ -614,7 +510,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                 </div>
               </div>
 
-              {/* Opciones de Publicación */}
+              {/* Publicación */}
               <div className="bg-white rounded-lg shadow p-6">
                 <h2 className="text-xl font-semibold text-gray-800 mb-6 pb-3 border-b">
                   ⚙️ Opciones de Publicación
@@ -627,7 +523,7 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       name="isFeatured"
                       checked={formData.isFeatured}
                       onChange={handleChange}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                      className="rounded w-5 h-5"
                     />
                     <div>
                       <span className="block font-medium text-gray-800">⭐ Vehículo Destacado</span>
@@ -641,11 +537,11 @@ export default function VehicleForm({ vehicle, onSave, onCancel }) {
                       name="isPublished"
                       checked={formData.isPublished}
                       onChange={handleChange}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-5 h-5"
+                      className="rounded w-5 h-5"
                     />
                     <div>
                       <span className="block font-medium text-gray-800">🌐 Publicar en el sitio web</span>
-                      <span className="text-sm text-gray-600">Visible para clientes en la página pública</span>
+                      <span className="text-sm text-gray-600">Visible para clientes</span>
                     </div>
                   </label>
                 </div>
