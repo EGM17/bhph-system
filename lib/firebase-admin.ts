@@ -11,24 +11,19 @@ function getAdminApp(): App {
 
   const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
   const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+  const clientEmail = process.env.APP_CLIENT_EMAIL ?? process.env.FIREBASE_CLIENT_EMAIL
+  const privateKey = (process.env.APP_PRIVATE_KEY ?? process.env.FIREBASE_PRIVATE_KEY)?.replace(/\\n/g, '\n')
 
-  // Support both original env var names and App Hosting renamed vars
-  const clientEmail =
-    process.env.APP_CLIENT_EMAIL ?? process.env.FIREBASE_CLIENT_EMAIL
-
-  const privateKey = (
-    process.env.APP_PRIVATE_KEY ?? process.env.FIREBASE_PRIVATE_KEY
-  )?.replace(/\\n/g, '\n')
-
-  if (!projectId || !clientEmail || !privateKey) {
-    throw new Error(
-      `Missing Firebase Admin credentials. ` +
-      `clientEmail: ${!!clientEmail}, privateKey: ${!!privateKey}, projectId: ${!!projectId}`
-    )
+  // During build time, credentials won't be available — return a placeholder app
+  if (!clientEmail || !privateKey) {
+    return initializeApp({
+      projectId,
+      storageBucket,
+    })
   }
 
   return initializeApp({
-    credential: cert({ projectId, clientEmail, privateKey }),
+    credential: cert({ projectId: projectId!, clientEmail, privateKey }),
     storageBucket,
   })
 }
