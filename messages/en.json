@@ -1,0 +1,161 @@
+{
+  "nav": {
+    "start": "Start",
+    "inventory": "Inventory",
+    "financing": "Financing",
+    "contact": "Contact",
+    "viewInventory": "View inventory",
+    "hours": "Mon - Sun: 10 AM - 7 PM"
+  },
+  "hero": {
+    "badge": "Used cars in Salem, Oregon",
+    "title": "Financing",
+    "titleAccent": "interest-free",
+    "subtitle": "We offer easy and fast financing on pre-owned vehicles. No credit check, no ITIN, no SSN, no license, and no interest.",
+    "ctaPrimary": "View inventory",
+    "ctaSecondary": "Apply for financing",
+    "stat1Value": "500+",
+    "stat1Label": "Happy Customers",
+    "stat2Value": "15+",
+    "stat2Label": "Years of Experience",
+    "stat3Value": "4.9",
+    "stat3Label": "Google rating"
+  },
+  "featured": {
+    "label": "Featured",
+    "title": "Featured Vehicles",
+    "subtitle": "Our selection of the most popular vehicles with the best conditions",
+    "viewAll": "View full inventory"
+  },
+  "whyUs": {
+    "title": "Why choose us?",
+    "subtitle": "For over 15 years, we've been helping families get their ideal car, with no credit, no ITIN, no SSN, and no interest.",
+    "item1Title": "Guaranteed approval",
+    "item1Desc": "Everyone is approved regardless of their credit history",
+    "item2Title": "Quick process",
+    "item2Desc": "Bring the required documents to our branch and drive the same day.",
+    "item3Title": "Flexible payments",
+    "item3Desc": "Payment plans tailored to your budget and interest-free"
+  },
+  "cta": {
+    "title": "Ready to drive a new car?",
+    "subtitle": "Visit us today or call us to begin your financing process",
+    "viewInventory": "View inventory",
+    "callNow": "Call now"
+  },
+  "footer": {
+    "tagline": "Your trusted dealer in Salem, Oregon. In-house financing available for everyone.",
+    "quickLinks": "Quick links",
+    "contact": "Contact",
+    "schedule": "Schedule",
+    "hours": "Monday to Sunday: 10 AM - 7 PM",
+    "languages": "We speak English and Spanish! Personalized attention.",
+    "rights": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "inventory": {
+    "title": "Check out our inventory",
+    "availableCount": "{count} vehicles available",
+    "searchPlaceholder": "Search by make, model, or year...",
+    "sortFeatured": "Featured First",
+    "sortPriceLow": "Price: Low to High",
+    "sortPriceHigh": "Price: High to Low",
+    "sortNewest": "Newest First",
+    "filters": "Filters",
+    "showing": "Showing {count} vehicles sorted by:",
+    "noResults": "No vehicles found matching your search.",
+    "viewDetails": "View details",
+    "perMonth": "/month",
+    "downFrom": "Down payment from",
+    "interest": "0% INTEREST",
+    "outstanding": "OUTSTANDING",
+    "sold": "SOLD"
+  },
+  "vehicleDetail": {
+    "backToInventory": "Back to inventory",
+    "monthlyPayment": "MONTHLY PAYMENT",
+    "perMonth": "/month",
+    "downPaymentFrom": "Down payment from",
+    "specs": "SPECS",
+    "year": "Year",
+    "mileage": "Mileage",
+    "bodywork": "Bodywork",
+    "mpg": "MPG",
+    "description": "Description",
+    "noDescription": "No description available for this vehicle.",
+    "callForPricing": "Call for pricing",
+    "sendMessage": "Send message",
+    "interestFree": "0% Interest Financing",
+    "shareVehicle": "Share",
+    "linkCopied": "Link copied!",
+    "contactForm": {
+      "title": "Interested in this vehicle?",
+      "subtitle": "Send us a message and we'll contact you shortly.",
+      "name": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Message (optional)",
+      "submit": "Send message",
+      "sending": "Sending...",
+      "success": "Message sent! We'll contact you shortly.",
+      "error": "Error sending message. Please try again."
+    }
+  },
+  "financing": {
+    "hero": {
+      "badge": "In-house financing",
+      "title": "Get approved",
+      "titleAccent": "today",
+      "subtitle": "We offer flexible financing for everyone, regardless of your credit history."
+    },
+    "requirements": {
+      "title": "What do you need?",
+      "subtitle": "The process is simple and fast. You can drive the same day.",
+      "item1": "Valid ID (any country)",
+      "item2": "Proof of income",
+      "item3": "Down payment",
+      "item4": "Proof of address",
+      "note": "No credit check, no ITIN, no SSN required."
+    },
+    "cta": {
+      "title": "Apply for financing",
+      "subtitle": "Fill out the form and we'll contact you within 24 hours.",
+      "submit": "Apply now"
+    }
+  },
+  "contact": {
+    "title": "Contact us",
+    "subtitle": "We're here to help. Contact us by phone, visit us in person, or send us a message.",
+    "form": {
+      "title": "Send us a message",
+      "name": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Message",
+      "submit": "Send message",
+      "sending": "Sending...",
+      "success": "Message sent successfully. We'll contact you shortly.",
+      "error": "Error sending message. Please try again."
+    },
+    "info": {
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "hours": "Business hours"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Tips, news and advice for buying your next car.",
+    "readMore": "Read more",
+    "backToBlog": "Back to blog"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred. Please try again.",
+    "notFound": "Page not found.",
+    "currency": "$",
+    "miles": "mi"
+  }
+}

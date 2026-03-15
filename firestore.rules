@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // ── Inventory ─────────────────────────────────────────────────────────────
+    match /inventory/{vehicleId} {
+      // Public: only published + available vehicles
+      allow read: if resource.data.isPublished == true
+                  && resource.data.status == 'available';
+      // Admin: full access
+      allow read, write: if isSignedIn();
+    }
+
+    // ── Leads ─────────────────────────────────────────────────────────────────
+    match /leads/{leadId} {
+      // Anyone can submit a lead
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.email is string
+                    && request.resource.data.phone is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 200
+                    && request.resource.data.email.size() <= 200
+                    && request.resource.data.phone.size() <= 50;
+      // Only admin can read, update, delete
+      allow read, update, delete: if isSignedIn();
+    }
+
+    // ── Blog ──────────────────────────────────────────────────────────────────
+    match /blog/{postId} {
+      // Public: only published posts
+      allow read: if resource.data.isPublished == true;
+      // Admin: full access
+      allow read, write: if isSignedIn();
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────────
+    match /settings/{document} {
+      // Public read for site settings (hero image, etc.)
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // ── Default: deny all ─────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

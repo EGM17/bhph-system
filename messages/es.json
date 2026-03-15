@@ -1,0 +1,161 @@
+{
+  "nav": {
+    "start": "Inicio",
+    "inventory": "Inventario",
+    "financing": "Financiamiento",
+    "contact": "Contacto",
+    "viewInventory": "Ver inventario",
+    "hours": "Lun - Dom: 10 AM - 7 PM"
+  },
+  "hero": {
+    "badge": "Autos usados en Salem, Oregon",
+    "title": "Financiamiento",
+    "titleAccent": "sin intereses",
+    "subtitle": "Ofrecemos financiamiento fácil y rápido en vehículos seminuevos. Sin verificación de crédito, sin ITIN, sin SSN, sin licencia y sin intereses.",
+    "ctaPrimary": "Ver inventario",
+    "ctaSecondary": "Aplicar para financiamiento",
+    "stat1Value": "500+",
+    "stat1Label": "Clientes satisfechos",
+    "stat2Value": "15+",
+    "stat2Label": "Años de experiencia",
+    "stat3Value": "4.9",
+    "stat3Label": "Calificación en Google"
+  },
+  "featured": {
+    "label": "Destacados",
+    "title": "Vehículos destacados",
+    "subtitle": "Nuestra selección de los vehículos más populares con las mejores condiciones",
+    "viewAll": "Ver inventario completo"
+  },
+  "whyUs": {
+    "title": "¿Por qué elegirnos?",
+    "subtitle": "Más de 15 años ayudando a familias a obtener su auto ideal, sin crédito, sin ITIN, sin SSN y sin intereses.",
+    "item1Title": "Aprobación garantizada",
+    "item1Desc": "Todos son aprobados sin importar su historial de crédito",
+    "item2Title": "Proceso rápido",
+    "item2Desc": "Acude con los requisitos a nuestra sucursal y maneja el mismo día.",
+    "item3Title": "Pagos flexibles",
+    "item3Desc": "Planes de pago ajustados a tu presupuesto y sin intereses"
+  },
+  "cta": {
+    "title": "¿Listo para manejar un nuevo auto?",
+    "subtitle": "Visítanos hoy o llámanos para comenzar tu proceso de financiamiento",
+    "viewInventory": "Ver inventario",
+    "callNow": "Llamar ahora"
+  },
+  "footer": {
+    "tagline": "Tu concesionario de confianza en Salem, Oregon. Financiamiento propio disponible para todos.",
+    "quickLinks": "Enlaces rápidos",
+    "contact": "Contacto",
+    "schedule": "Horario",
+    "hours": "Lunes a domingo: 10 AM - 7 PM",
+    "languages": "¡Hablamos inglés y español! Atención personalizada.",
+    "rights": "Todos los derechos reservados.",
+    "privacy": "Política de privacidad",
+    "terms": "Términos de servicio"
+  },
+  "inventory": {
+    "title": "Conoce nuestro inventario",
+    "availableCount": "{count} vehículos disponibles",
+    "searchPlaceholder": "Buscar por marca, modelo o año...",
+    "sortFeatured": "Destacados primero",
+    "sortPriceLow": "Precio: menor a mayor",
+    "sortPriceHigh": "Precio: mayor a menor",
+    "sortNewest": "Más recientes",
+    "filters": "Filtros",
+    "showing": "Mostrando {count} vehículos ordenados por:",
+    "noResults": "No se encontraron vehículos con esa búsqueda.",
+    "viewDetails": "Ver detalles",
+    "perMonth": "/mes",
+    "downFrom": "Enganche desde",
+    "interest": "0% INTERÉS",
+    "outstanding": "DESTACADO",
+    "sold": "VENDIDO"
+  },
+  "vehicleDetail": {
+    "backToInventory": "Volver al inventario",
+    "monthlyPayment": "PAGO MENSUAL",
+    "perMonth": "/mes",
+    "downPaymentFrom": "Enganche desde",
+    "specs": "ESPECIFICACIONES",
+    "year": "Año",
+    "mileage": "Kilometraje",
+    "bodywork": "Carrocería",
+    "mpg": "MPG",
+    "description": "Descripción",
+    "noDescription": "No hay descripción disponible para este vehículo.",
+    "callForPricing": "Llamar para precio",
+    "sendMessage": "Enviar mensaje",
+    "interestFree": "Financiamiento 0% Interés",
+    "shareVehicle": "Compartir",
+    "linkCopied": "¡Enlace copiado!",
+    "contactForm": {
+      "title": "¿Te interesa este vehículo?",
+      "subtitle": "Envíanos un mensaje y te contactamos en breve.",
+      "name": "Nombre completo",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "message": "Mensaje (opcional)",
+      "submit": "Enviar mensaje",
+      "sending": "Enviando...",
+      "success": "¡Mensaje enviado! Te contactaremos en breve.",
+      "error": "Error al enviar el mensaje. Por favor intenta de nuevo."
+    }
+  },
+  "financing": {
+    "hero": {
+      "badge": "Financiamiento propio",
+      "title": "Obtén tu aprobación",
+      "titleAccent": "hoy mismo",
+      "subtitle": "Ofrecemos financiamiento flexible para todos, sin importar tu historial de crédito."
+    },
+    "requirements": {
+      "title": "¿Qué necesitas?",
+      "subtitle": "El proceso es simple y rápido. Puedes manejar el mismo día.",
+      "item1": "Identificación válida (cualquier país)",
+      "item2": "Comprobante de ingresos",
+      "item3": "Enganche inicial",
+      "item4": "Comprobante de domicilio",
+      "note": "No se requiere verificación de crédito, ITIN ni SSN."
+    },
+    "cta": {
+      "title": "Aplica para financiamiento",
+      "subtitle": "Llena el formulario y te contactamos en menos de 24 horas.",
+      "submit": "Aplicar ahora"
+    }
+  },
+  "contact": {
+    "title": "Contáctanos",
+    "subtitle": "Estamos aquí para ayudarte. Contáctanos por teléfono, visítanos en persona o envíanos un mensaje.",
+    "form": {
+      "title": "Envíanos un mensaje",
+      "name": "Nombre completo",
+      "email": "Correo electrónico",
+      "phone": "Teléfono",
+      "message": "Mensaje",
+      "submit": "Enviar mensaje",
+      "sending": "Enviando...",
+      "success": "Mensaje enviado correctamente. Te contactaremos en breve.",
+      "error": "Error al enviar el mensaje. Por favor intenta de nuevo."
+    },
+    "info": {
+      "address": "Dirección",
+      "phone": "Teléfono",
+      "email": "Correo electrónico",
+      "hours": "Horario de atención"
+    }
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Consejos, noticias y recomendaciones para comprar tu próximo auto.",
+    "readMore": "Leer más",
+    "backToBlog": "Volver al blog"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error. Por favor intenta de nuevo.",
+    "notFound": "Página no encontrada.",
+    "currency": "$",
+    "miles": "mi"
+  }
+}
