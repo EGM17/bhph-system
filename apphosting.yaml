@@ -5,7 +5,6 @@ runConfig:
   minInstances: 0
 
 env:
-  # Firebase Client (public)
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
     value: AIzaSyD_H-jaKx79hd_M02Ld-A7LSl9mjJhEp-E
     availability:
@@ -47,16 +46,3 @@ env:
     availability:
       - BUILD
       - RUNTIME
-
-  # Firebase Admin (secrets)
-  - variable: APP_CLIENT_EMAIL
-    secret: FIREBASE_CLIENT_EMAIL
-    availability:
-      - RUNTIME
-
-  - variable: APP_PRIVATE_KEY
-    secret: ADMIN_PRIVATE_KEY
-    availability:
-      - RUNTIME
-  - variable: ADMIN_PRIVATE_KEY_ID
-    secret: ADMIN_PRIVATE_KEY_ID
