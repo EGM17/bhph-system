@@ -58,3 +58,5 @@ env:
     secret: ADMIN_PRIVATE_KEY
     availability:
       - RUNTIME
+  - variable: ADMIN_PRIVATE_KEY_ID
+    secret: ADMIN_PRIVATE_KEY_ID
