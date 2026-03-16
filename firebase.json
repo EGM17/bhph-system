@@ -1,61 +1,9 @@
 {
-  "hosting": {
-    "site": "el-compa-guero-895c9",
-    "public": ".next/standalone",
-    "cleanUrls": true,
-    "trailingSlash": false,
-    "rewrites": [
-      {
-        "source": "**",
-        "function": "nextjsFunc"
-      }
-    ],
-    "headers": [
-      {
-        "source": "/_next/static/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000, immutable"
-          }
-        ]
-      },
-      {
-        "source": "/fonts/**",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=31536000, immutable"
-          }
-        ]
-      },
-      {
-        "source": "**/*.{jpg,jpeg,png,webp,svg,ico}",
-        "headers": [
-          {
-            "key": "Cache-Control",
-            "value": "public, max-age=86400, stale-while-revalidate=604800"
-          }
-        ]
-      }
-    ]
-  },
   "firestore": {
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
   "storage": {
     "rules": "storage.rules"
-  },
-  "apphosting": {
-    "backendId": "el-compa-guero",
-    "rootDir": "/",
-    "ignore": [
-      "node_modules",
-      ".git",
-      "firebase-debug.log",
-      "firebase-debug.*.log",
-      "functions"
-    ]
   }
 }
