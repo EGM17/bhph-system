@@ -1,8 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getAuth } from 'firebase-admin/app'
 import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app'
+import { getAuth } from 'firebase-admin/auth'
 
 function getAdminAuth() {
   if (getApps().length > 0) {
@@ -37,12 +37,9 @@ export async function POST(request: NextRequest) {
     }
 
     const auth = getAdminAuth()
-
-    // Verify the ID token first
     const decodedToken = await auth.verifyIdToken(idToken)
     console.log('[session] Token verified for uid:', decodedToken.uid)
 
-    // Create session cookie
     const sessionCookie = await auth.createSessionCookie(idToken, {
       expiresIn: SESSION_DURATION_MS,
     })
