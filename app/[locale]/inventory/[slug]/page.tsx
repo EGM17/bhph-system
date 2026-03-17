@@ -126,93 +126,16 @@ export default async function VehicleDetailPage({ params }: Props) {
     <PublicLayout>
       <Script id={`schema-car-${vehicle.id}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(carSchema) }} />
 
-      {/* Hero banner */}
-      <div className="bg-blue-700 text-white">
-        <div className="container-section py-5">
-
+      {/* Simple back link — no hero banner */}
+      <div className="bg-white border-b border-gray-100">
+        <div className="container-section py-3">
           <a
             href={isEs ? '/es/inventario' : '/inventory'}
-            className="inline-flex items-center gap-1.5 text-sm text-blue-200 hover:text-white transition-colors mb-4"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToInventory')}
           </a>
-
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-
-            {/* Left: title hierarchy */}
-            <div className="space-y-1">
-              <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight tracking-tight">
-                {title}
-              </h1>
-              {(vehicle.trim || vehicle.series) && (
-                <p className="text-blue-200 text-base font-medium">
-                  {[vehicle.trim, vehicle.series].filter(Boolean).join(' · ')}
-                </p>
-              )}
-              <div className="pt-1 flex items-center gap-4 text-sm text-blue-300">
-                {vehicle.mileage && (
-                  <span>{vehicle.mileage.toLocaleString('en-US')} mi</span>
-                )}
-                {vehicle.year && vehicle.mileage && <span className="text-blue-500">·</span>}
-                {vehicle.color && (
-                  <span>{vehicle.color}</span>
-                )}
-                {vehicle.color && vehicle.bodyClass && <span className="text-blue-500">·</span>}
-                {vehicle.bodyClass && (
-                  <span>{vehicle.bodyClass}</span>
-                )}
-              </div>
-            </div>
-
-            {/* Right: price — the star of the show */}
-            <div className="lg:text-right">
-              {isInHouse && vehicle.monthlyPaymentFrom ? (
-                <div className="space-y-1">
-                  <p className="text-blue-200 text-xs uppercase tracking-widest font-semibold">
-                    {t('monthlyPayment')}
-                  </p>
-                  <div className="flex items-baseline gap-1 lg:justify-end">
-                    <span className="text-5xl font-extrabold text-white tracking-tight">
-                      ${vehicle.monthlyPaymentFrom.toLocaleString('en-US')}
-                    </span>
-                    <span className="text-blue-200 text-lg font-medium">{t('perMonth')}</span>
-                  </div>
-                  {vehicle.downPaymentFrom && (
-                    <p className="text-blue-200 text-sm">
-                      {t('downPaymentFrom')}{' '}
-                      <span className="text-white font-semibold">
-                        ${vehicle.downPaymentFrom.toLocaleString('en-US')}
-                      </span>
-                    </p>
-                  )}
-                  {isInHouse && (
-                    <p className="text-blue-300 text-xs pt-1">
-                      {isEs ? 'Sin intereses · Sin verificación de crédito' : '0% interest · No credit check required'}
-                    </p>
-                  )}
-                </div>
-              ) : vehicle.price ? (
-                <div className="space-y-1">
-                  <p className="text-blue-200 text-xs uppercase tracking-widest font-semibold">
-                    {isEs ? 'Precio' : 'Price'}
-                  </p>
-                  <p className="text-5xl font-extrabold text-white tracking-tight">
-                    ${vehicle.price.toLocaleString('en-US')}
-                  </p>
-                </div>
-              ) : null}
-            </div>
-
-          </div>
-
-          {/* Bottom: secondary info — VIN small and subtle */}
-          {vehicle.vin && (
-            <p className="mt-4 pt-4 border-t border-blue-600 text-xs text-blue-400 font-mono">
-              VIN: {vehicle.vin}
-            </p>
-          )}
-
         </div>
       </div>
 
@@ -260,35 +183,77 @@ export default async function VehicleDetailPage({ params }: Props) {
               )}
             </div>
 
-            {/* Right: CTA panel */}
+            {/* Right: full panel */}
             <div className="space-y-4">
-
-              {/* Sticky wrapper on desktop */}
               <div className="lg:sticky lg:top-24 space-y-4">
 
-                {/* Financing highlights */}
-                {isInHouse && (
-                  <div className="bg-blue-600 rounded-xl p-5 text-white">
-                    <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-3">
-                      {isEs ? 'Financiamiento propio' : 'In-house financing'}
+                {/* Title + trim */}
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight tracking-tight">
+                    {title}
+                  </h1>
+                  {(vehicle.trim || vehicle.series) && (
+                    <p className="text-gray-500 text-sm font-medium mt-1">
+                      {[vehicle.trim, vehicle.series].filter(Boolean).join(' · ')}
                     </p>
-                    <div className="space-y-2 text-sm">
-                      {[
-                        isEs ? '✓ Sin verificación de crédito' : '✓ No credit check',
-                        isEs ? '✓ Sin ITIN ni SSN' : '✓ No ITIN or SSN needed',
-                        isEs ? '✓ Sin intereses' : '✓ 0% interest',
-                        isEs ? '✓ Maneja el mismo día' : '✓ Drive the same day',
-                      ].map(item => (
-                        <p key={item} className="text-blue-100">{item}</p>
-                      ))}
-                    </div>
+                  )}
+                  <div className="flex items-center gap-3 mt-2 text-sm text-gray-400">
+                    {vehicle.mileage && <span>{vehicle.mileage.toLocaleString('en-US')} mi</span>}
+                    {vehicle.mileage && vehicle.color && <span>·</span>}
+                    {vehicle.color && <span>{vehicle.color}</span>}
+                    {vehicle.color && vehicle.bodyClass && <span>·</span>}
+                    {vehicle.bodyClass && <span>{vehicle.bodyClass}</span>}
                   </div>
-                )}
+                </div>
+
+                {/* Price — star of the show */}
+                <div className="bg-blue-700 rounded-xl p-5 text-white space-y-2">
+                  {isInHouse && vehicle.monthlyPaymentFrom ? (
+                    <>
+                      <p className="text-xs font-bold text-blue-200 uppercase tracking-widest">
+                        {t('monthlyPayment')}
+                      </p>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-5xl font-extrabold tracking-tight">
+                          ${vehicle.monthlyPaymentFrom.toLocaleString('en-US')}
+                        </span>
+                        <span className="text-blue-200 text-lg font-medium">{t('perMonth')}</span>
+                      </div>
+                      {vehicle.downPaymentFrom && (
+                        <p className="text-blue-200 text-sm">
+                          {t('downPaymentFrom')}{' '}
+                          <span className="text-white font-semibold">
+                            ${vehicle.downPaymentFrom.toLocaleString('en-US')}
+                          </span>
+                        </p>
+                      )}
+                      <div className="pt-2 border-t border-blue-600 space-y-1">
+                        {[
+                          isEs ? '✓ Sin verificación de crédito' : '✓ No credit check',
+                          isEs ? '✓ Sin ITIN ni SSN' : '✓ No ITIN or SSN needed',
+                          isEs ? '✓ Sin intereses' : '✓ 0% interest',
+                          isEs ? '✓ Maneja el mismo día' : '✓ Drive the same day',
+                        ].map(item => (
+                          <p key={item} className="text-xs text-blue-200">{item}</p>
+                        ))}
+                      </div>
+                    </>
+                  ) : vehicle.price ? (
+                    <>
+                      <p className="text-xs font-bold text-blue-200 uppercase tracking-widest">
+                        {isEs ? 'Precio' : 'Price'}
+                      </p>
+                      <p className="text-5xl font-extrabold tracking-tight">
+                        ${vehicle.price.toLocaleString('en-US')}
+                      </p>
+                    </>
+                  ) : null}
+                </div>
 
                 {/* Call CTA */}
                 <a
                   href="tel:+15038789550"
-                  className="flex items-center justify-center gap-2 w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
+                  className="flex items-center justify-center gap-2 w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors text-lg"
                 >
                   <Phone className="w-5 h-5" aria-hidden="true" />
                   {t('callForPricing')}
@@ -303,6 +268,13 @@ export default async function VehicleDetailPage({ params }: Props) {
                     locale={locale}
                   />
                 </div>
+
+                {/* VIN — very bottom, subtle */}
+                {vehicle.vin && (
+                  <p className="text-center text-xs text-gray-400 font-mono pt-1">
+                    VIN: {vehicle.vin}
+                  </p>
+                )}
 
               </div>
             </div>
