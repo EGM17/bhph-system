@@ -125,20 +125,15 @@ export default async function VehicleDetailPage({ params }: Props) {
 
               {/* Title block — below gallery like reference */}
               <div className="bg-white rounded-xl p-5 space-y-3">
-                {/* Status pills */}
+                {/* Status pills — Featured + Financing only */}
                 <div className="flex items-center gap-2">
-                  {vehicle.status === 'available' && (
-                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200">
-                      {isEs ? 'En stock' : 'In Stock'}
-                    </span>
-                  )}
                   {vehicle.isFeatured && (
-                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white">
                       {isEs ? 'Destacado' : 'Featured'}
                     </span>
                   )}
                   {isInHouse && (
-                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
                       {isEs ? 'Financiamiento propio' : 'In-house financing'}
                     </span>
                   )}
@@ -147,7 +142,7 @@ export default async function VehicleDetailPage({ params }: Props) {
                 {/* Title */}
                 <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">{title}</h1>
 
-                {/* Key highlights row */}
+                {/* Key highlights row — mileage, color, trim, year + VIN */}
                 <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
                   {vehicle.mileage && (
                     <span className="flex items-center gap-1.5">
@@ -173,18 +168,12 @@ export default async function VehicleDetailPage({ params }: Props) {
                       {vehicle.year}
                     </span>
                   )}
+                  {vehicle.vin && (
+                    <span className="text-xs text-gray-400 font-mono">
+                      VIN: {vehicle.vin}
+                    </span>
+                  )}
                 </div>
-
-                {/* Feature pills */}
-                {featurePills.length > 0 && (
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    {featurePills.map(pill => (
-                      <span key={pill} className="text-xs font-medium px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full border border-gray-200">
-                        {pill}
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Vehicle Specs grid */}
@@ -344,10 +333,7 @@ export default async function VehicleDetailPage({ params }: Props) {
                   <VehicleLeadForm vehicleId={vehicle.id} vehicleTitle={title} vehicleSlug={slug} locale={locale} />
                 </div>
 
-                {/* VIN */}
-                {vehicle.vin && (
-                  <p className="text-center text-xs text-gray-400 font-mono">VIN: {vehicle.vin}</p>
-                )}
+
 
               </div>
             </div>
