@@ -1,12 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Phone, Mail, Car, Calendar, ChevronDown } from 'lucide-react'
 import type { Lead } from '@/types'
-
-interface LeadsClientProps {
-  leads: Lead[]
-}
 
 const STATUS_OPTIONS: Lead['status'][] = ['new', 'contacted', 'closed']
 
@@ -16,10 +12,39 @@ const statusStyle: Record<Lead['status'], string> = {
   closed: 'bg-gray-100 text-gray-600',
 }
 
-export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
-  const [leads, setLeads] = useState(initialLeads)
+export default function LeadsClient({ leads: initialLeads }: { leads: Lead[] }) {
+  const [leads, setLeads] = useState<Lead[]>(initialLeads)
+  const [loading, setLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<Lead['status'] | 'all'>('all')
   const [updating, setUpdating] = useState<string | null>(null)
+
+  useEffect(() => {
+    async function fetchLeads() {
+      try {
+        const { collection, getDocs, query, orderBy, Timestamp } = await import('firebase/firestore')
+        const { db } = await import('@/lib/firebase')
+
+        const q = query(collection(db, 'leads'), orderBy('createdAt', 'desc'))
+        const snapshot = await getDocs(q)
+        const data: Lead[] = snapshot.docs.map((d) => {
+          const raw = d.data()
+          return {
+            ...(raw as Omit<Lead, 'id' | 'createdAt'>),
+            id: d.id,
+            createdAt: raw.createdAt instanceof Timestamp
+              ? raw.createdAt.toDate().toISOString()
+              : raw.createdAt ?? new Date().toISOString(),
+          }
+        })
+        setLeads(data)
+      } catch (err) {
+        console.error('Failed to load leads:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchLeads()
+  }, [])
 
   const filtered = filterStatus === 'all'
     ? leads
@@ -39,26 +64,37 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 p-10 text-center">
+        <p className="text-gray-400 text-sm">Loading leads...</p>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4">
       {/* Filter bar */}
-      <div className="bg-white rounded-xl border border-gray-200 p-4 flex gap-2 flex-wrap">
-        {(['all', ...STATUS_OPTIONS] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setFilterStatus(s)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize ${
-              filterStatus === s
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            {s === 'all' ? 'All' : s}
-            <span className="ml-1.5 text-xs opacity-70">
-              ({s === 'all' ? leads.length : leads.filter((l) => l.status === s).length})
-            </span>
-          </button>
-        ))}
+      <div className="bg-white rounded-xl border border-gray-200 p-4 flex gap-2 flex-wrap items-center justify-between">
+        <div className="flex gap-2 flex-wrap">
+          {(['all', ...STATUS_OPTIONS] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => setFilterStatus(s)}
+              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors capitalize ${
+                filterStatus === s
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {s === 'all' ? 'All' : s}
+              <span className="ml-1.5 text-xs opacity-70">
+                ({s === 'all' ? leads.length : leads.filter((l) => l.status === s).length})
+              </span>
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-gray-400">{leads.length} total leads</p>
       </div>
 
       {/* Leads list */}
@@ -88,79 +124,54 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
                   </p>
                 </div>
 
-                {/* Status selector */}
                 <div className="relative">
                   <select
                     value={lead.status}
-                    onChange={(e) =>
-                      handleStatusChange(lead.id, e.target.value as Lead['status'])
-                    }
+                    onChange={(e) => handleStatusChange(lead.id, e.target.value as Lead['status'])}
                     disabled={updating === lead.id}
                     className={`appearance-none pl-3 pr-7 py-1.5 rounded-lg text-xs font-semibold capitalize cursor-pointer border-0 focus:ring-2 focus:ring-blue-500 ${statusStyle[lead.status]} disabled:opacity-50`}
                     aria-label={`Change status for lead from ${lead.name}`}
                   >
                     {STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s} className="bg-white text-gray-900">
-                        {s}
-                      </option>
+                      <option key={s} value={s} className="bg-white text-gray-900">{s}</option>
                     ))}
                   </select>
-                  <ChevronDown
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60"
-                    aria-hidden="true"
-                  />
+                  <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-60" aria-hidden="true" />
                 </div>
               </div>
 
-              {/* Contact info */}
               <div className="flex flex-wrap gap-4 text-sm">
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="flex items-center gap-1.5 text-blue-600 hover:underline"
-                >
+                <a href={`tel:${lead.phone}`} className="flex items-center gap-1.5 text-blue-600 hover:underline">
                   <Phone className="w-3.5 h-3.5" aria-hidden="true" />
                   {lead.phone}
                 </a>
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="flex items-center gap-1.5 text-blue-600 hover:underline"
-                >
+                <a href={`mailto:${lead.email}`} className="flex items-center gap-1.5 text-blue-600 hover:underline">
                   <Mail className="w-3.5 h-3.5" aria-hidden="true" />
                   {lead.email}
                 </a>
               </div>
 
-              {/* Vehicle context */}
               {lead.vehicleTitle && (
                 <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
                   <Car className="w-3.5 h-3.5 text-gray-400" aria-hidden="true" />
                   <span>
                     Interested in:{' '}
-                    <a
-                      href={`/inventory/${lead.vehicleSlug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-blue-600 hover:underline"
-                    >
+                    <a href={`/inventory/${lead.vehicleSlug}`} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">
                       {lead.vehicleTitle}
                     </a>
                   </span>
                 </div>
               )}
 
-              {/* Message */}
               {lead.message && (
                 <p className="text-sm text-gray-600 bg-gray-50 rounded-lg px-3 py-2 leading-relaxed">
                   {lead.message}
                 </p>
               )}
 
-              {/* Source + language badges */}
               <div className="flex gap-2">
                 <span className="badge bg-gray-100 text-gray-500 text-xs">{lead.source}</span>
-                <span className="badge bg-gray-100 text-gray-500 text-xs uppercase">
-                  {lead.language}
-                </span>
+                <span className="badge bg-gray-100 text-gray-500 text-xs uppercase">{lead.language}</span>
               </div>
             </div>
           ))}
