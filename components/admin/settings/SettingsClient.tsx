@@ -8,10 +8,12 @@ interface HeroSettings {
   heroImage?: string
   span1Text?: string
   span1Color?: string
-  span1Size?: string
+  span1SizeMobile?: string
+  span1SizeDesktop?: string
   span2Text?: string
   span2Color?: string
-  span2Size?: string
+  span2SizeMobile?: string
+  span2SizeDesktop?: string
   subtitle?: string
 }
 
@@ -91,34 +93,37 @@ export default function SettingsClient() {
     }
   }
 
-  const field = (label: string, key: keyof HeroSettings, placeholder: string, type: 'text' | 'color' = 'text') => (
+  const textField = (label: string, key: keyof HeroSettings, placeholder: string) => (
     <div>
       <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">{label}</label>
-      {type === 'color' ? (
-        <div className="flex items-center gap-3">
-          <input
-            type="color"
-            value={settings[key] || '#ffffff'}
-            onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
-            className="w-10 h-10 rounded cursor-pointer border border-gray-300"
-          />
-          <input
-            type="text"
-            value={settings[key] || ''}
-            onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
-            placeholder={placeholder}
-            className="input-field text-sm py-2 flex-1"
-          />
-        </div>
-      ) : (
+      <input
+        type="text"
+        value={settings[key] || ''}
+        onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
+        placeholder={placeholder}
+        className="input-field text-sm py-2"
+      />
+    </div>
+  )
+
+  const colorField = (label: string, key: keyof HeroSettings, defaultColor: string) => (
+    <div>
+      <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">{label}</label>
+      <div className="flex items-center gap-3">
+        <input
+          type="color"
+          value={settings[key] || defaultColor}
+          onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
+          className="w-10 h-10 rounded cursor-pointer border border-gray-300"
+        />
         <input
           type="text"
           value={settings[key] || ''}
           onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
-          placeholder={placeholder}
-          className="input-field text-sm py-2"
+          placeholder={defaultColor}
+          className="input-field text-sm py-2 flex-1"
         />
-      )}
+      </div>
     </div>
   )
 
@@ -146,7 +151,10 @@ export default function SettingsClient() {
         </div>
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="hero-upload" />
         <label htmlFor="hero-upload" className={`btn-primary w-full justify-center cursor-pointer ${uploadingSaving ? 'opacity-50 pointer-events-none' : ''}`}>
-          {uploadingSaving ? <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</> : <><Upload className="w-4 h-4" />{settings.heroImage ? 'Change image' : 'Upload image'}</>}
+          {uploadingSaving
+            ? <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</>
+            : <><Upload className="w-4 h-4" />{settings.heroImage ? 'Change image' : 'Upload image'}</>
+          }
         </label>
         <p className="text-xs text-gray-400">JPG, PNG, WebP. Max 5MB.</p>
       </div>
@@ -154,33 +162,41 @@ export default function SettingsClient() {
       {/* Hero Text */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5">
         <h3 className="text-sm font-semibold text-gray-900">Hero Text</h3>
+        <p className="text-xs text-gray-400">Font sizes accept any CSS value: 32px, 2rem, 2.5rem, etc.</p>
 
+        {/* Span 1 */}
         <div className="border-b border-gray-100 pb-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Span 1 (e.g. Financing)</p>
-          {field('Text', 'span1Text', 'Financing')}
-          {field('Color', 'span1Color', '#ffffff', 'color')}
-          {field('Font size (e.g. 48px or 3rem)', 'span1Size', '60px')}
-        </div>
-
-        <div className="border-b border-gray-100 pb-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Span 2 (e.g. interest-free)</p>
-          {field('Text', 'span2Text', 'interest-free')}
-          {field('Color', 'span2Color', '#F59E0B', 'color')}
-          {field('Font size (e.g. 48px or 3rem)', 'span2Size', '60px')}
-        </div>
-
-        <div className="space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Subtitle paragraph</p>
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Text</label>
-            <textarea
-              value={settings.subtitle || ''}
-              onChange={e => setSettings(prev => ({ ...prev, subtitle: e.target.value }))}
-              placeholder="We offer easy and fast financing on pre-owned vehicles..."
-              rows={3}
-              className="input-field text-sm py-2 resize-none"
-            />
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Line 1 (e.g. Financing)</p>
+          {textField('Text', 'span1Text', 'Financing')}
+          {colorField('Color', 'span1Color', '#ffffff')}
+          <div className="grid grid-cols-2 gap-3">
+            {textField('Size — Mobile', 'span1SizeMobile', '2.25rem')}
+            {textField('Size — Desktop', 'span1SizeDesktop', '3.75rem')}
           </div>
+        </div>
+
+        {/* Span 2 */}
+        <div className="border-b border-gray-100 pb-5 space-y-4">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Line 2 (e.g. interest-free)</p>
+          {textField('Text', 'span2Text', 'interest-free')}
+          {colorField('Color', 'span2Color', '#F59E0B')}
+          <div className="grid grid-cols-2 gap-3">
+            {textField('Size — Mobile', 'span2SizeMobile', '2.25rem')}
+            {textField('Size — Desktop', 'span2SizeDesktop', '3.75rem')}
+          </div>
+        </div>
+
+        {/* Subtitle */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Subtitle paragraph</p>
+          <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Text</label>
+          <textarea
+            value={settings.subtitle || ''}
+            onChange={e => setSettings(prev => ({ ...prev, subtitle: e.target.value }))}
+            placeholder="We offer easy and fast financing on pre-owned vehicles..."
+            rows={3}
+            className="input-field text-sm py-2 resize-none"
+          />
         </div>
 
         <button

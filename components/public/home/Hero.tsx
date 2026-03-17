@@ -7,10 +7,12 @@ interface HeroSettings {
   heroImage?: string
   span1Text?: string
   span1Color?: string
-  span1Size?: string
+  span1SizeMobile?: string
+  span1SizeDesktop?: string
   span2Text?: string
   span2Color?: string
-  span2Size?: string
+  span2SizeMobile?: string
+  span2SizeDesktop?: string
   subtitle?: string
 }
 
@@ -18,16 +20,31 @@ export default function Hero({
   heroImage,
   span1Text,
   span1Color,
-  span1Size,
+  span1SizeMobile,
+  span1SizeDesktop,
   span2Text,
   span2Color,
-  span2Size,
+  span2SizeMobile,
+  span2SizeDesktop,
   subtitle,
 }: HeroSettings) {
   const t = useTranslations('hero')
 
+  const hasCustomSize = span1SizeMobile || span1SizeDesktop || span2SizeMobile || span2SizeDesktop
+
   return (
     <section className="bg-blue-600 text-white overflow-hidden" aria-label="Hero section">
+      {hasCustomSize && (
+        <style>{`
+          .hero-span1 { font-size: ${span1SizeMobile || '2.25rem'}; }
+          .hero-span2 { font-size: ${span2SizeMobile || '2.25rem'}; }
+          @media (min-width: 768px) {
+            .hero-span1 { font-size: ${span1SizeDesktop || span1SizeMobile || '3.75rem'}; }
+            .hero-span2 { font-size: ${span2SizeDesktop || span2SizeMobile || '3.75rem'}; }
+          }
+        `}</style>
+      )}
+
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{ backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
@@ -44,20 +61,14 @@ export default function Hero({
 
             <h1 className="font-bold leading-tight">
               <span
-                style={{
-                  color: span1Color || '#ffffff',
-                  fontSize: span1Size || undefined,
-                }}
-                className={span1Size ? '' : 'text-4xl md:text-5xl lg:text-6xl'}
+                className={hasCustomSize ? 'hero-span1' : 'text-4xl md:text-5xl lg:text-6xl'}
+                style={{ color: span1Color || '#ffffff' }}
               >
                 {span1Text || t('title')}
               </span>{' '}
               <span
-                style={{
-                  color: span2Color || '#F59E0B',
-                  fontSize: span2Size || undefined,
-                }}
-                className={span2Size ? '' : 'text-4xl md:text-5xl lg:text-6xl'}
+                className={hasCustomSize ? 'hero-span2' : 'text-4xl md:text-5xl lg:text-6xl'}
+                style={{ color: span2Color || '#F59E0B' }}
               >
                 {span2Text || t('titleAccent')}
               </span>
