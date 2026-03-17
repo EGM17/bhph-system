@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
-import { Upload, X, Star, Globe, AlertCircle, Loader2, Search } from 'lucide-react'
+import { Upload, X, Star, Globe, AlertCircle, Loader2, Search, Sparkles } from 'lucide-react'
 import type { Vehicle, VehicleImage, FinancingType, VehicleStatus } from '@/types'
 
 interface VehicleFormClientProps {
@@ -17,12 +17,25 @@ interface ImagePreview {
   order: number
 }
 
+type Tone = 'professional' | 'friendly' | 'urgent' | 'enthusiastic'
+type Focus = 'features' | 'financing' | 'family' | 'value'
+
 export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientProps) {
   const [saving, setSaving] = useState(false)
   const [decoding, setDecoding] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // AI state
+  const [generatingEn, setGeneratingEn] = useState(false)
+  const [generatingEs, setGeneratingEs] = useState(false)
+  const [showAiEn, setShowAiEn] = useState(false)
+  const [showAiEs, setShowAiEs] = useState(false)
+  const [toneEn, setToneEn] = useState<Tone>('friendly')
+  const [focusEn, setFocusEn] = useState<Focus>('features')
+  const [toneEs, setToneEs] = useState<Tone>('friendly')
+  const [focusEs, setFocusEs] = useState<Focus>('features')
 
   // Form state
   const [titleEn, setTitleEn] = useState(vehicle?.title?.en ?? '')
@@ -58,6 +71,41 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
     vehicle?.images?.map((img, i) => ({ url: img.url, isPrimary: img.isPrimary, order: i })) ?? []
   )
 
+  const getVehicleData = () => ({
+    year, make, model, trim, mileage, color, bodyClass, engine,
+    transmission, drivetrain, fuelType, mpg, doors, financingType,
+    monthlyPayment, downPayment, price,
+  })
+
+  // ── AI Generate ────────────────────────────────────────────────────────────
+  const handleGenerate = async (lang: 'en' | 'es') => {
+    const isEs = lang === 'es'
+    if (isEs) setGeneratingEs(true)
+    else setGeneratingEn(true)
+
+    try {
+      const res = await fetch('/api/admin/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleData: getVehicleData(),
+          tone: isEs ? toneEs : toneEn,
+          focus: isEs ? focusEs : focusEn,
+          language: lang,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error)
+      if (isEs) { setDescEs(data.description); setShowAiEs(false) }
+      else { setDescEn(data.description); setShowAiEn(false) }
+    } catch (err) {
+      setError('Failed to generate description. Please try again.')
+    } finally {
+      if (isEs) setGeneratingEs(false)
+      else setGeneratingEn(false)
+    }
+  }
+
   // ── VIN Decode ─────────────────────────────────────────────────────────────
   const handleDecodeVin = async () => {
     if (!vin.trim() || vin.trim().length !== 17) {
@@ -67,14 +115,10 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
     setDecoding(true)
     setError('')
     try {
-      const res = await fetch(
-        `https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin.trim()}?format=json`
-      )
+      const res = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/decodevin/${vin.trim()}?format=json`)
       const data = await res.json()
       const results: { Variable: string; Value: string }[] = data.Results ?? []
-
-      const get = (variable: string) =>
-        results.find(r => r.Variable === variable)?.Value?.trim() || ''
+      const get = (v: string) => results.find(r => r.Variable === v)?.Value?.trim() || ''
 
       const decodedYear = get('Model Year')
       const decodedMake = get('Make')
@@ -102,23 +146,15 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
       if (decodedTransmission) setTransmission(decodedTransmission)
       if (decodedSeries) setSeries(decodedSeries)
 
-      // Auto-fill engine description
-      const engineParts = [
-        decodedCylinders ? `${decodedCylinders}-cyl` : '',
-        decodedDisplacement ? `${decodedDisplacement}L` : '',
-        decodedFuel || '',
-      ].filter(Boolean)
+      const engineParts = [decodedCylinders ? `${decodedCylinders}-cyl` : '', decodedDisplacement ? `${decodedDisplacement}L` : '', decodedFuel || ''].filter(Boolean)
       if (engineParts.length > 0) setEngine(engineParts.join(' '))
-
-      // Auto-fill title if empty
       if (!titleEn && decodedYear && decodedMake && decodedModel) {
-        const autoTitle = `${decodedYear} ${decodedMake} ${decodedModel}${decodedTrim ? ' ' + decodedTrim : ''}`
-        setTitleEn(autoTitle)
+        setTitleEn(`${decodedYear} ${decodedMake} ${decodedModel}${decodedTrim ? ' ' + decodedTrim : ''}`)
       }
 
       setSuccess('VIN decoded successfully. Review and edit the fields below.')
       setTimeout(() => setSuccess(''), 4000)
-    } catch (err) {
+    } catch {
       setError('Failed to decode VIN. Please check the VIN and try again.')
     } finally {
       setDecoding(false)
@@ -134,16 +170,11 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
       const url = URL.createObjectURL(file)
       newPreviews.push({ file, url, isPrimary: images.length === 0 && newPreviews.length === 0, order: images.length + newPreviews.length })
     })
-    setImages((prev) => [...prev, ...newPreviews])
+    setImages(prev => [...prev, ...newPreviews])
   }
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index).map((img, i) => ({ ...img, order: i, isPrimary: i === 0 ? true : img.isPrimary })))
-  }
-
-  const setPrimary = (index: number) => {
-    setImages((prev) => prev.map((img, i) => ({ ...img, isPrimary: i === index })))
-  }
+  const removeImage = (index: number) => setImages(prev => prev.filter((_, i) => i !== index).map((img, i) => ({ ...img, order: i, isPrimary: i === 0 ? true : img.isPrimary })))
+  const setPrimary = (index: number) => setImages(prev => prev.map((img, i) => ({ ...img, isPrimary: i === index })))
 
   // ── Save ───────────────────────────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -153,7 +184,6 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
       setError('Title (EN), make, model and year are required.')
       return
     }
-
     setSaving(true)
     try {
       const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
@@ -177,36 +207,23 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
       const payload = {
         title: { en: titleEn.trim(), es: titleEs.trim() || titleEn.trim() },
         description: { en: descEn.trim(), es: descEs.trim() },
-        year: parseInt(year),
-        make: make.trim(),
-        model: model.trim(),
-        trim: trim.trim() || undefined,
-        vin: vin.trim() || undefined,
+        year: parseInt(year), make: make.trim(), model: model.trim(),
+        trim: trim.trim() || undefined, vin: vin.trim() || undefined,
         mileage: parseInt(mileage) || 0,
-        bodyClass: bodyClass.trim() || undefined,
-        fuelType: fuelType.trim() || undefined,
-        engine: engine.trim() || undefined,
-        mpg: mpg.trim() || undefined,
-        color: color.trim() || undefined,
-        transmission: transmission.trim() || undefined,
-        drivetrain: drivetrain.trim() || undefined,
-        cylinders: cylinders.trim() || undefined,
-        doors: doors.trim() || undefined,
-        displacement: displacement.trim() || undefined,
-        series: series.trim() || undefined,
-        financingType,
+        bodyClass: bodyClass.trim() || undefined, fuelType: fuelType.trim() || undefined,
+        engine: engine.trim() || undefined, mpg: mpg.trim() || undefined,
+        color: color.trim() || undefined, transmission: transmission.trim() || undefined,
+        drivetrain: drivetrain.trim() || undefined, cylinders: cylinders.trim() || undefined,
+        doors: doors.trim() || undefined, displacement: displacement.trim() || undefined,
+        series: series.trim() || undefined, financingType,
         price: price ? parseInt(price) : undefined,
         monthlyPaymentFrom: monthlyPayment ? parseInt(monthlyPayment) : undefined,
         downPaymentFrom: downPayment ? parseInt(downPayment) : undefined,
-        status,
-        isPublished,
-        isFeatured,
-        images: uploadedImages,
+        status, isPublished, isFeatured, images: uploadedImages,
       }
 
       const { collection, addDoc, doc, updateDoc, serverTimestamp } = await import('firebase/firestore')
       const { db } = await import('@/lib/firebase')
-
       const clean = Object.fromEntries(Object.entries(payload).filter(([, v]) => v !== undefined))
 
       if (isNew) {
@@ -230,13 +247,84 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
   const inputClass = 'input-field text-sm py-2.5'
   const labelClass = 'block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide'
 
+  const tones: { value: Tone; label: string }[] = [
+    { value: 'friendly', label: 'Friendly' },
+    { value: 'professional', label: 'Professional' },
+    { value: 'enthusiastic', label: 'Enthusiastic' },
+    { value: 'urgent', label: 'Urgent' },
+  ]
+  const focuses: { value: Focus; label: string }[] = [
+    { value: 'features', label: 'Features' },
+    { value: 'financing', label: 'Financing' },
+    { value: 'family', label: 'Family' },
+    { value: 'value', label: 'Value' },
+  ]
+
+  const AiPanel = ({ lang }: { lang: 'en' | 'es' }) => {
+    const isEs = lang === 'es'
+    const tone = isEs ? toneEs : toneEn
+    const setTone = isEs ? setToneEs : setToneEn
+    const focus = isEs ? focusEs : focusEn
+    const setFocus = isEs ? setFocusEs : setFocusEn
+    const generating = isEs ? generatingEs : generatingEn
+
+    return (
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-3">
+        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">AI Settings</p>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Tone</label>
+            <div className="flex flex-wrap gap-1.5">
+              {tones.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => setTone(t.value as Tone)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${tone === t.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300'}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-gray-600 mb-1">Focus</label>
+            <div className="flex flex-wrap gap-1.5">
+              {focuses.map(f => (
+                <button
+                  key={f.value}
+                  type="button"
+                  onClick={() => setFocus(f.value as Focus)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${focus === f.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-300'}`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => handleGenerate(lang)}
+          disabled={generating}
+          className="btn-primary w-full justify-center text-sm disabled:opacity-50"
+        >
+          {generating
+            ? <><Loader2 className="w-4 h-4 animate-spin" />Generating...</>
+            : <><Sparkles className="w-4 h-4" />Generate {isEs ? 'Spanish' : 'English'} description</>
+          }
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
 
       {/* Bilingual titles */}
       <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <Globe className="w-4 h-4 text-blue-600" aria-hidden="true" />
+          <Globe className="w-4 h-4 text-blue-600" />
           Vehicle Title (Bilingual)
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -251,33 +339,21 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         </div>
       </section>
 
-      {/* VIN + Decode */}
+      {/* VIN Decoder */}
       <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-gray-900">VIN Decoder</h3>
         <div className="flex gap-3">
           <div className="flex-1">
             <label className={labelClass}>VIN (17 characters)</label>
-            <input
-              type="text"
-              value={vin}
-              onChange={e => setVin(e.target.value.toUpperCase())}
-              placeholder="1HGBH41JXMN109186"
-              className={`${inputClass} font-mono`}
-              maxLength={17}
-            />
+            <input type="text" value={vin} onChange={e => setVin(e.target.value.toUpperCase())} placeholder="1HGBH41JXMN109186" className={`${inputClass} font-mono`} maxLength={17} />
           </div>
           <div className="flex items-end">
-            <button
-              type="button"
-              onClick={handleDecodeVin}
-              disabled={decoding || vin.length !== 17}
-              className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-            >
+            <button type="button" onClick={handleDecodeVin} disabled={decoding || vin.length !== 17} className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
               {decoding ? <><Loader2 className="w-4 h-4 animate-spin" />Decoding...</> : <><Search className="w-4 h-4" />Decode VIN</>}
             </button>
           </div>
         </div>
-        <p className="text-xs text-gray-400">Enter the full 17-character VIN and click Decode to auto-fill vehicle specs from NHTSA database.</p>
+        <p className="text-xs text-gray-400">Enter the full 17-character VIN and click Decode to auto-fill vehicle specs.</p>
       </section>
 
       {/* Vehicle specs */}
@@ -330,7 +406,7 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         <div>
           <label className={labelClass}>Financing Type</label>
           <div className="flex gap-3">
-            {(['in-house', 'cash-only'] as FinancingType[]).map((type) => (
+            {(['in-house', 'cash-only'] as FinancingType[]).map(type => (
               <label key={type} className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="financingType" value={type} checked={financingType === type} onChange={() => setFinancingType(type)} className="text-blue-600" />
                 <span className="text-sm capitalize">{type.replace('-', ' ')}</span>
@@ -359,28 +435,64 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         </div>
       </section>
 
-      {/* Descriptions */}
+      {/* Descriptions with AI */}
       <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-          <Globe className="w-4 h-4 text-blue-600" aria-hidden="true" />
+          <Globe className="w-4 h-4 text-blue-600" />
           Description (Bilingual)
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
+
+        {/* English */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
             <label className={labelClass}>Description — English</label>
-            <textarea value={descEn} onChange={e => setDescEn(e.target.value)} placeholder="Well maintained vehicle, clean title..." rows={4} className={`${inputClass} resize-none`} />
+            <button
+              type="button"
+              onClick={() => setShowAiEn(v => !v)}
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {showAiEn ? 'Hide AI' : 'Write with AI'}
+            </button>
           </div>
-          <div>
+          {showAiEn && <AiPanel lang="en" />}
+          <textarea
+            value={descEn}
+            onChange={e => setDescEn(e.target.value)}
+            placeholder="Well maintained vehicle, clean title..."
+            rows={4}
+            className={`${inputClass} resize-none`}
+          />
+        </div>
+
+        {/* Spanish */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
             <label className={labelClass}>Descripción — Español</label>
-            <textarea value={descEs} onChange={e => setDescEs(e.target.value)} placeholder="Vehículo bien mantenido, título limpio..." rows={4} className={`${inputClass} resize-none`} />
+            <button
+              type="button"
+              onClick={() => setShowAiEs(v => !v)}
+              className="flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              {showAiEs ? 'Ocultar IA' : 'Escribir con IA'}
+            </button>
           </div>
+          {showAiEs && <AiPanel lang="es" />}
+          <textarea
+            value={descEs}
+            onChange={e => setDescEs(e.target.value)}
+            placeholder="Vehículo bien mantenido, título limpio..."
+            rows={4}
+            className={`${inputClass} resize-none`}
+          />
         </div>
       </section>
 
       {/* Images */}
       <section className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
         <h3 className="text-sm font-semibold text-gray-900">Images</h3>
-        <p className="text-xs text-gray-400">Max 5MB per image. JPG, PNG, WebP accepted. First image is the primary. Click ★ to set primary.</p>
+        <p className="text-xs text-gray-400">Max 5MB per image. JPG, PNG, WebP. Click ★ to set primary.</p>
         <div
           className="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center cursor-pointer hover:border-blue-300 transition-colors"
           onClick={() => fileInputRef.current?.click()}
@@ -399,8 +511,8 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
                 <Image src={img.url} alt={`Image ${index + 1}`} fill className="object-cover" sizes="120px" />
                 {img.isPrimary && <span className="absolute top-1 left-1 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">Primary</span>}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <button type="button" onClick={() => setPrimary(index)} className="p-1 bg-white/90 rounded text-amber-500 hover:bg-white" title="Set as primary"><Star className="w-3.5 h-3.5" /></button>
-                  <button type="button" onClick={() => removeImage(index)} className="p-1 bg-white/90 rounded text-red-500 hover:bg-white" title="Remove"><X className="w-3.5 h-3.5" /></button>
+                  <button type="button" onClick={() => setPrimary(index)} className="p-1 bg-white/90 rounded text-amber-500 hover:bg-white"><Star className="w-3.5 h-3.5" /></button>
+                  <button type="button" onClick={() => removeImage(index)} className="p-1 bg-white/90 rounded text-red-500 hover:bg-white"><X className="w-3.5 h-3.5" /></button>
                 </div>
               </div>
             ))}
@@ -422,11 +534,11 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         <div className="flex gap-6">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={isPublished} onChange={e => setIsPublished(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
-            <span className="text-sm text-gray-700 flex items-center gap-1">🌐 Published on website</span>
+            <span className="text-sm text-gray-700">🌐 Published on website</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />
-            <span className="text-sm text-gray-700 flex items-center gap-1">⭐ Featured on homepage</span>
+            <span className="text-sm text-gray-700">⭐ Featured on homepage</span>
           </label>
         </div>
       </section>
@@ -444,7 +556,7 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         </div>
       )}
 
-      <button onClick={handleSubmit} disabled={saving} className="btn-primary w-full justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+      <button onClick={handleSubmit} disabled={saving} className="btn-primary w-full justify-center disabled:opacity-50">
         {saving ? <><Loader2 className="w-4 h-4 animate-spin" />{isNew ? 'Creating...' : 'Saving...'}</> : isNew ? 'Create vehicle' : 'Save changes'}
       </button>
       <button type="button" onClick={() => window.location.href = '/admin/inventory'} className="btn-outline-blue w-full justify-center text-sm">
