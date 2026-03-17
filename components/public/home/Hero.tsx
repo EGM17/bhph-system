@@ -60,7 +60,7 @@ export default function Hero({ heroImage }: HeroProps) {
               <div className="w-px h-12 bg-white/30" aria-hidden="true" />
               <div className="text-center">
                 <p className="text-3xl font-bold">
-                  {t('stat3Value')} <span className="text-amber-400">★</span>
+                  {t('stat3Value')}
                 </p>
                 <p className="text-sm text-blue-200">{t('stat3Label')}</p>
               </div>
