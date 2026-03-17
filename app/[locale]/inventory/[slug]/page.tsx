@@ -127,54 +127,55 @@ export default async function VehicleDetailPage({ params }: Props) {
       <Script id={`schema-car-${vehicle.id}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(carSchema) }} />
 
       {/* Hero banner */}
-      <div className="bg-slate-900 text-white">
+      <div className="bg-blue-700 text-white">
         <div className="container-section py-4">
           <a
             href={isEs ? '/es/inventario' : '/inventory'}
-            className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-3"
+            className="inline-flex items-center gap-1.5 text-sm text-blue-200 hover:text-white transition-colors mb-3"
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToInventory')}
           </a>
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">{title}</h1>
-              {(vehicle.trim || vehicle.series) && (
-                <p className="text-slate-400 text-sm mt-1">
-                  {[vehicle.trim, vehicle.series].filter(Boolean).join(' · ')}
-                </p>
-              )}
-              <div className="flex items-center gap-2 mt-2">
+              {/* Badge row */}
+              <div className="flex items-center gap-2 mb-2">
                 {isInHouse && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-white/20 text-white border border-white/30">
                     ✓ {t('interestFree')}
                   </span>
                 )}
                 {vehicle.vin && (
-                  <span className="text-xs text-slate-500 font-mono">
-                    VIN: {vehicle.vin}
+                  <span className="text-xs text-blue-200 font-mono bg-white/10 px-2.5 py-1 rounded-full">
+                    VIN {vehicle.vin}
                   </span>
                 )}
               </div>
+              <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">{title}</h1>
+              {(vehicle.trim || vehicle.series) && (
+                <p className="text-blue-200 text-sm mt-1">
+                  {[vehicle.trim, vehicle.series].filter(Boolean).join(' · ')}
+                </p>
+              )}
             </div>
             {/* Price in header */}
-            <div className="text-right">
+            <div className="text-right shrink-0">
               {isInHouse && vehicle.monthlyPaymentFrom ? (
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-widest">{t('monthlyPayment')}</p>
+                  <p className="text-xs text-blue-200 uppercase tracking-widest">{t('monthlyPayment')}</p>
                   <p className="text-3xl font-bold text-white">
                     ${vehicle.monthlyPaymentFrom.toLocaleString('en-US')}
-                    <span className="text-base font-normal text-slate-400 ml-1">{t('perMonth')}</span>
+                    <span className="text-base font-normal text-blue-200 ml-1">{t('perMonth')}</span>
                   </p>
                   {vehicle.downPaymentFrom && (
-                    <p className="text-sm text-slate-400">
-                      {t('downPaymentFrom')} <strong className="text-slate-200">${vehicle.downPaymentFrom.toLocaleString('en-US')}</strong>
+                    <p className="text-sm text-blue-200">
+                      {t('downPaymentFrom')} <strong className="text-white">${vehicle.downPaymentFrom.toLocaleString('en-US')}</strong>
                     </p>
                   )}
                 </div>
               ) : vehicle.price ? (
                 <div>
-                  <p className="text-xs text-slate-400 uppercase tracking-widest">Price</p>
+                  <p className="text-xs text-blue-200 uppercase tracking-widest">Price</p>
                   <p className="text-3xl font-bold text-white">${vehicle.price.toLocaleString('en-US')}</p>
                 </div>
               ) : null}
