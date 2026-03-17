@@ -85,9 +85,23 @@ export default function SettingsClient() {
         )}
       </div>
       <div className="space-y-3">
-        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" id="hero-upload" />
-        <label htmlFor="hero-upload" className={`btn-primary w-full justify-center cursor-pointer ${saving ? 'opacity-50 pointer-events-none' : ''}`}>
-          {saving ? <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</> : <><Upload className="w-4 h-4" />{heroImage ? 'Change image' : 'Upload image'}</>}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+          className="hidden"
+          id="hero-upload"
+        />
+        <label
+          htmlFor="hero-upload"
+          className={`btn-primary w-full justify-center cursor-pointer ${saving ? 'opacity-50 pointer-events-none' : ''}`}
+        >
+          {saving ? (
+            <><Loader2 className="w-4 h-4 animate-spin" />Uploading...</>
+          ) : (
+            <><Upload className="w-4 h-4" />{heroImage ? 'Change image' : 'Upload image'}</>
+          )}
         </label>
         {success && (
           <div className="flex items-center gap-2 text-green-600 text-sm bg-green-50 px-4 py-3 rounded-lg">
@@ -95,7 +109,9 @@ export default function SettingsClient() {
             Image updated. Refresh the public site to see changes.
           </div>
         )}
-        {error && <p className="text-red-600 text-sm bg-red-50 px-4 py-3 rounded-lg">{error}</p>}
+        {error && (
+          <p className="text-red-600 text-sm bg-red-50 px-4 py-3 rounded-lg">{error}</p>
+        )}
         <p className="text-xs text-gray-400">JPG, PNG, WebP. Max 5MB.</p>
       </div>
     </div>
