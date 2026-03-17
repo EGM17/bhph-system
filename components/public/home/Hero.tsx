@@ -68,7 +68,7 @@ export default function Hero({ heroImage }: HeroProps) {
           </div>
 
           <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-            <div className="relative w-72 h-72 md:w-96 md:h-96 rounded-2xl overflow-hidden">
+            <div className="relative w-80 h-80 md:w-[480px] md:h-[480px] rounded-2xl overflow-hidden">
               {heroImage ? (
                 <Image
                   src={heroImage}
