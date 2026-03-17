@@ -104,20 +104,20 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
 
     setSaving(true)
     try {
-      // Upload new images first
+      // Upload images directly to Firebase Storage from the browser
+      const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+      const { storage } = await import('@/lib/firebase')
+
       const uploadedImages: VehicleImage[] = []
       for (const img of images) {
         if (img.file) {
-          const formData = new FormData()
-          formData.append('file', img.file)
-          formData.append('vehicleId', vehicle?.id ?? 'temp')
-          const res = await fetch('/api/admin/vehicles/upload-image', {
-            method: 'POST',
-            body: formData,
-          })
-          if (!res.ok) throw new Error('Image upload failed')
-          const data = await res.json()
-          uploadedImages.push({ url: data.url, isPrimary: img.isPrimary, order: img.order })
+          const ext = img.file.name.split('.').pop() ?? 'jpg'
+          const filename = `${Date.now()}-${Math.random().toString(36).slice(-6)}.${ext}`
+          const vehicleId = vehicle?.id ?? 'temp'
+          const storageRef = ref(storage, `vehicles/${vehicleId}/${filename}`)
+          await uploadBytes(storageRef, img.file, { contentType: img.file.type })
+          const url = await getDownloadURL(storageRef)
+          uploadedImages.push({ url, isPrimary: img.isPrimary, order: img.order })
         } else {
           uploadedImages.push({ url: img.url, isPrimary: img.isPrimary, order: img.order })
         }
