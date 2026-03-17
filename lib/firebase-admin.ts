@@ -11,12 +11,23 @@ function getAdminApp(): App {
   const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!
   const rawKey = process.env.FIREBASE_PRIVATE_KEY ?? ''
-  const privateKey = rawKey.includes('\\n')
-    ? rawKey.replace(/\\n/g, '\n')
-    : rawKey
+
+  // Normalize private key — handle all possible formats:
+  // 1. Literal \n strings: "-----BEGIN...\nMII..."
+  // 2. Real newlines from Vercel env var editor
+  // 3. Escaped quotes around the key
+  const privateKey = rawKey
+    .replace(/\\n/g, '\n')  // literal \n → real newline
+    .replace(/^["']|["']$/g, '') // strip surrounding quotes if any
+    .trim()
+
+  console.log('[firebase-admin] projectId:', projectId)
+  console.log('[firebase-admin] clientEmail:', clientEmail)
+  console.log('[firebase-admin] privateKey starts with:', privateKey.slice(0, 30))
+  console.log('[firebase-admin] privateKey ends with:', privateKey.slice(-30))
 
   if (!clientEmail || !privateKey) {
-    // Build time fallback — no admin operations will work
+    console.warn('[firebase-admin] Missing credentials — admin operations will fail')
     return initializeApp({ projectId, storageBucket })
   }
 
