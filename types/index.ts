@@ -34,6 +34,13 @@ export interface Vehicle {
   mpg?: string
   color?: string
   condition?: VehicleCondition
+  // Extended specs from VIN decode
+  transmission?: string
+  drivetrain?: string
+  cylinders?: string
+  doors?: string
+  displacement?: string
+  series?: string
   // Pricing
   price?: number
   monthlyPaymentFrom?: number
@@ -94,11 +101,8 @@ export interface BlogPost {
 
 export interface SiteSettings {
   heroImage?: string
-  heroImageAlt?: BilingualField
   heroTitle?: BilingualField
   heroSubtitle?: BilingualField
-  metaTitle?: BilingualField
-  metaDescription?: BilingualField
   gtmId?: string
   metaPixelId?: string
   hotjarId?: string
