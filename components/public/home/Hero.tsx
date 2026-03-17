@@ -76,7 +76,8 @@ export default function Hero({ heroImage }: HeroProps) {
                   fill
                   className="object-cover"
                   priority
-                  sizes="(max-width: 768px) 288px, 384px"
+                  quality={100}
+                  sizes="(max-width: 768px) 320px, 480px"
                 />
               ) : (
                 <div className="w-full h-full bg-blue-500/40 flex items-center justify-center">
