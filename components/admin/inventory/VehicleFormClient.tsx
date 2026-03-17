@@ -150,11 +150,16 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
       const { collection, addDoc, doc, updateDoc, serverTimestamp } = await import('firebase/firestore')
       const { db } = await import('@/lib/firebase')
 
+      // Remove undefined values — Firestore doesn't accept them
+      const clean = Object.fromEntries(
+        Object.entries(payload).filter(([, v]) => v !== undefined)
+      )
+
       if (isNew) {
         const { generateSlug } = await import('@/services/vehicleService')
-        const slug = generateSlug({ year: payload.year, make: payload.make, model: payload.model, vin: payload.vin })
+        const slug = generateSlug({ year: clean.year, make: clean.make, model: clean.model, vin: clean.vin })
         await addDoc(collection(db, 'inventory'), {
-          ...payload,
+          ...clean,
           slug,
           views: 0,
           createdAt: serverTimestamp(),
@@ -162,7 +167,7 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         })
       } else {
         await updateDoc(doc(db, 'inventory', vehicle!.id), {
-          ...payload,
+          ...clean,
           updatedAt: serverTimestamp(),
         })
       }
