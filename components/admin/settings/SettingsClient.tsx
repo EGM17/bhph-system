@@ -156,14 +156,14 @@ export default function SettingsClient() {
         <h3 className="text-sm font-semibold text-gray-900">Hero Text</h3>
 
         <div className="border-b border-gray-100 pb-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Span 1 (e.g. "Financing")</p>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Span 1 (e.g. Financing)</p>
           {field('Text', 'span1Text', 'Financing')}
           {field('Color', 'span1Color', '#ffffff', 'color')}
           {field('Font size (e.g. 48px or 3rem)', 'span1Size', '60px')}
         </div>
 
         <div className="border-b border-gray-100 pb-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Span 2 (e.g. "interest-free")</p>
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Span 2 (e.g. interest-free)</p>
           {field('Text', 'span2Text', 'interest-free')}
           {field('Color', 'span2Color', '#F59E0B', 'color')}
           {field('Font size (e.g. 48px or 3rem)', 'span2Size', '60px')}
