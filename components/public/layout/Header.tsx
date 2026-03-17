@@ -11,9 +11,10 @@ export default function Header() {
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  // Build locale-aware href
   const localePath = (path: string) =>
-    locale === 'es' ? `/es${path === '/' ? '' : path.replace('/inventory', '/inventario').replace('/financing', '/financiamiento').replace('/contact', '/contacto')}` : path
+    locale === 'es'
+      ? `/es${path === '/' ? '' : path.replace('/inventory', '/inventario').replace('/financing', '/financiamiento').replace('/contact', '/contacto')}`
+      : path
 
   const navLinks = [
     { label: t('start'), href: localePath('/') },
@@ -22,12 +23,29 @@ export default function Header() {
     { label: t('contact'), href: localePath('/contact') },
   ]
 
-  // Switch to opposite locale preserving path
+  // Strip locale prefix from pathname to get the raw path
+  const rawPath = pathname
+    .replace(/^\/en/, '')   // remove /en prefix
+    .replace(/^\/es/, '')   // remove /es prefix
+    || '/'
+
+  // Switch locale preserving current page
   const switchLocalePath = () => {
     if (locale === 'en') {
-      return '/es' + (pathname === '/' ? '' : pathname)
+      // EN → ES: translate path segments
+      const esPath = rawPath
+        .replace('/inventory', '/inventario')
+        .replace('/financing', '/financiamiento')
+        .replace('/contact', '/contacto')
+      return `/es${esPath === '/' ? '' : esPath}`
+    } else {
+      // ES → EN: translate back
+      const enPath = rawPath
+        .replace('/inventario', '/inventory')
+        .replace('/financiamiento', '/financing')
+        .replace('/contacto', '/contact')
+      return enPath || '/'
     }
-    return pathname.replace(/^\/es/, '') || '/'
   }
 
   const langLabel = locale === 'en' ? 'Español' : 'English'
@@ -103,10 +121,7 @@ export default function Header() {
 
           {/* CTA button */}
           <div className="hidden md:flex">
-            <a
-              href={localePath('/inventory')}
-              className="btn-primary text-sm"
-            >
+            <a href={localePath('/inventory')} className="btn-primary text-sm">
               {t('viewInventory')}
             </a>
           </div>
