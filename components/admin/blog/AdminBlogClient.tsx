@@ -16,7 +16,9 @@ export default function AdminBlogClient({ posts: initial }: AdminBlogClientProps
     if (!confirm(`Delete "${title}"? This cannot be undone.`)) return
     setDeletingId(id)
     try {
-      await fetch(`/api/admin/blog/${id}`, { method: 'DELETE' })
+      const { doc, deleteDoc } = await import('firebase/firestore')
+      const { db } = await import('@/lib/firebase')
+      await deleteDoc(doc(db, 'blog', id))
       setPosts((prev) => prev.filter((p) => p.id !== id))
     } catch (err) {
       console.error('Delete failed:', err)

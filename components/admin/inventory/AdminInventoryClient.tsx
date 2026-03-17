@@ -27,7 +27,9 @@ export default function AdminInventoryClient({ vehicles: initial }: AdminInvento
 
     setDeletingId(id)
     try {
-      await fetch(`/api/admin/vehicles/${id}`, { method: 'DELETE' })
+      const { doc, deleteDoc } = await import('firebase/firestore')
+      const { db } = await import('@/lib/firebase')
+      await deleteDoc(doc(db, 'inventory', id))
       setVehicles((prev) => prev.filter((v) => v.id !== id))
     } catch (err) {
       console.error('Delete failed:', err)
