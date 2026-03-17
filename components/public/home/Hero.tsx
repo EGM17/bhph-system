@@ -15,7 +15,6 @@ export default function Hero({ heroImage }: HeroProps) {
       className="bg-blue-600 text-white overflow-hidden"
       aria-label="Hero section"
     >
-      {/* Subtle dot pattern overlay */}
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
@@ -28,42 +27,26 @@ export default function Hero({ heroImage }: HeroProps) {
       <div className="relative container-section py-16 md:py-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
-          {/* Text content — left on desktop, second on mobile */}
           <div className="order-2 lg:order-1 space-y-6 text-center lg:text-left">
-            {/* Badge */}
             <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
               {t('badge')}
             </span>
-
-            {/* Headline */}
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
               {t('title')}{' '}
               <span className="text-amber-400">{t('titleAccent')}</span>
             </h1>
-
-            {/* Subtitle */}
             <p className="text-lg text-blue-100 leading-relaxed max-w-lg mx-auto lg:mx-0">
               {t('subtitle')}
             </p>
-
-            {/* CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Link
-                href="/inventory"
-                className="btn-primary bg-white text-blue-600 hover:bg-blue-50 shadow-lg"
-              >
+              <Link href="/inventory" className="btn-primary bg-white text-blue-600 hover:bg-blue-50 shadow-lg">
                 {t('ctaPrimary')}
                 <ArrowRight className="w-4 h-4" />
               </Link>
-              <Link
-                href="/financing"
-                className="btn-outline-white"
-              >
+              <Link href="/financing" className="btn-outline-white">
                 {t('ctaSecondary')}
               </Link>
             </div>
-
-            {/* Stats */}
             <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
               <div className="text-center">
                 <p className="text-3xl font-bold">{t('stat1Value')}</p>
@@ -84,47 +67,22 @@ export default function Hero({ heroImage }: HeroProps) {
             </div>
           </div>
 
-          {/* Hero image — right on desktop, first on mobile */}
           <div className="order-1 lg:order-2 flex justify-center lg:justify-end">
-            <div className="relative w-72 h-72 md:w-96 md:h-96">
-              {/* Gold ring */}
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background:
-                    'radial-gradient(circle at 30% 30%, #FFD700, #B8860B)',
-                  padding: '8px',
-                }}
-                aria-hidden="true"
-              >
-                <div className="w-full h-full rounded-full overflow-hidden bg-blue-700">
-                  {heroImage ? (
-                    <Image
-                      src={heroImage}
-                      alt="El Compa Guero Auto Sales"
-                      fill
-                      className="object-cover"
-                      priority
-                      sizes="(max-width: 768px) 288px, 384px"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-blue-700" />
-                  )}
+            <div className="relative w-72 h-72 md:w-96 md:h-96 rounded-2xl overflow-hidden">
+              {heroImage ? (
+                <Image
+                  src={heroImage}
+                  alt="El Compa Guero Auto Sales"
+                  fill
+                  className="object-cover"
+                  priority
+                  sizes="(max-width: 768px) 288px, 384px"
+                />
+              ) : (
+                <div className="w-full h-full bg-blue-500/40 flex items-center justify-center">
+                  <span className="text-white/50 text-sm">No image set</span>
                 </div>
-              </div>
-
-              {/* Gold banner label */}
-              <div
-                className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-48 py-2 text-center text-xs font-bold text-white tracking-wider leading-snug"
-                style={{
-                  background: 'linear-gradient(135deg, #FFD700, #B8860B)',
-                  clipPath: 'polygon(8% 0%, 92% 0%, 100% 50%, 92% 100%, 8% 100%, 0% 50%)',
-                }}
-                aria-hidden="true"
-              >
-                EL COMPA GUERO<br />
-                <span className="font-normal text-[10px] opacity-90">AUTO SALES LLC</span>
-              </div>
+              )}
             </div>
           </div>
 
