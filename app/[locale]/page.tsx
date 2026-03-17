@@ -49,6 +49,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function HomePage({ params }: Props) {
+  const { locale } = await params
+
   let featuredVehicles: Vehicle[] = []
   try {
     featuredVehicles = await getFeaturedVehicles(6)
@@ -65,16 +67,20 @@ export default async function HomePage({ params }: Props) {
   return (
     <PublicLayout>
       <Hero
+        locale={locale}
         heroImage={heroSettings.heroImage}
         span1Text={heroSettings.span1Text}
+        span1TextEs={heroSettings.span1TextEs}
         span1Color={heroSettings.span1Color}
         span1SizeMobile={heroSettings.span1SizeMobile}
         span1SizeDesktop={heroSettings.span1SizeDesktop}
         span2Text={heroSettings.span2Text}
+        span2TextEs={heroSettings.span2TextEs}
         span2Color={heroSettings.span2Color}
         span2SizeMobile={heroSettings.span2SizeMobile}
         span2SizeDesktop={heroSettings.span2SizeDesktop}
         subtitle={heroSettings.subtitle}
+        subtitleEs={heroSettings.subtitleEs}
       />
       <FeaturedVehicles vehicles={featuredVehicles} />
       <WhyChooseUs />

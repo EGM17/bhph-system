@@ -4,31 +4,44 @@ import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 
 interface HeroSettings {
+  locale?: string
   heroImage?: string
   span1Text?: string
+  span1TextEs?: string
   span1Color?: string
   span1SizeMobile?: string
   span1SizeDesktop?: string
   span2Text?: string
+  span2TextEs?: string
   span2Color?: string
   span2SizeMobile?: string
   span2SizeDesktop?: string
   subtitle?: string
+  subtitleEs?: string
 }
 
 export default function Hero({
+  locale = 'en',
   heroImage,
   span1Text,
+  span1TextEs,
   span1Color,
   span1SizeMobile,
   span1SizeDesktop,
   span2Text,
+  span2TextEs,
   span2Color,
   span2SizeMobile,
   span2SizeDesktop,
   subtitle,
+  subtitleEs,
 }: HeroSettings) {
   const t = useTranslations('hero')
+  const isEs = locale === 'es'
+
+  const displaySpan1 = isEs ? (span1TextEs || span1Text) : span1Text
+  const displaySpan2 = isEs ? (span2TextEs || span2Text) : span2Text
+  const displaySubtitle = isEs ? (subtitleEs || subtitle) : subtitle
 
   const hasCustomSize = span1SizeMobile || span1SizeDesktop || span2SizeMobile || span2SizeDesktop
 
@@ -64,18 +77,18 @@ export default function Hero({
                 className={hasCustomSize ? 'hero-span1' : 'text-4xl md:text-5xl lg:text-6xl'}
                 style={{ color: span1Color || '#ffffff' }}
               >
-                {span1Text || t('title')}
+                {displaySpan1 || t('title')}
               </span>{' '}
               <span
                 className={hasCustomSize ? 'hero-span2' : 'text-4xl md:text-5xl lg:text-6xl'}
                 style={{ color: span2Color || '#F59E0B' }}
               >
-                {span2Text || t('titleAccent')}
+                {displaySpan2 || t('titleAccent')}
               </span>
             </h1>
 
             <p className="text-lg text-blue-100 leading-relaxed max-w-lg mx-auto lg:mx-0">
-              {subtitle || t('subtitle')}
+              {displaySubtitle || t('subtitle')}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
@@ -111,7 +124,7 @@ export default function Hero({
               {heroImage ? (
                 <Image
                   src={heroImage}
-                  alt={`${span1Text || 'Financing'} ${span2Text || 'interest-free'} - El Compa Guero Auto Sales Salem Oregon`}
+                  alt={`${displaySpan1 || 'Financing'} ${displaySpan2 || 'interest-free'} - El Compa Guero Auto Sales Salem Oregon`}
                   fill
                   className="object-cover"
                   priority

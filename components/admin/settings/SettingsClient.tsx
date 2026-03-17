@@ -7,14 +7,17 @@ import { Upload, Loader2, CheckCircle } from 'lucide-react'
 interface HeroSettings {
   heroImage?: string
   span1Text?: string
+  span1TextEs?: string
   span1Color?: string
   span1SizeMobile?: string
   span1SizeDesktop?: string
   span2Text?: string
+  span2TextEs?: string
   span2Color?: string
   span2SizeMobile?: string
   span2SizeDesktop?: string
   subtitle?: string
+  subtitleEs?: string
 }
 
 export default function SettingsClient() {
@@ -166,8 +169,11 @@ export default function SettingsClient() {
 
         {/* Span 1 */}
         <div className="border-b border-gray-100 pb-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Line 1 (e.g. Financing)</p>
-          {textField('Text', 'span1Text', 'Financing')}
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Line 1</p>
+          <div className="grid grid-cols-2 gap-3">
+            {textField('Text — English', 'span1Text', 'Financing')}
+            {textField('Text — Español', 'span1TextEs', 'Financiamiento')}
+          </div>
           {colorField('Color', 'span1Color', '#ffffff')}
           <div className="grid grid-cols-2 gap-3">
             {textField('Size — Mobile', 'span1SizeMobile', '2.25rem')}
@@ -177,8 +183,11 @@ export default function SettingsClient() {
 
         {/* Span 2 */}
         <div className="border-b border-gray-100 pb-5 space-y-4">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Line 2 (e.g. interest-free)</p>
-          {textField('Text', 'span2Text', 'interest-free')}
+          <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Line 2</p>
+          <div className="grid grid-cols-2 gap-3">
+            {textField('Text — English', 'span2Text', 'interest-free')}
+            {textField('Text — Español', 'span2TextEs', 'sin intereses')}
+          </div>
           {colorField('Color', 'span2Color', '#F59E0B')}
           <div className="grid grid-cols-2 gap-3">
             {textField('Size — Mobile', 'span2SizeMobile', '2.25rem')}
@@ -187,16 +196,28 @@ export default function SettingsClient() {
         </div>
 
         {/* Subtitle */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Subtitle paragraph</p>
-          <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Text</label>
-          <textarea
-            value={settings.subtitle || ''}
-            onChange={e => setSettings(prev => ({ ...prev, subtitle: e.target.value }))}
-            placeholder="We offer easy and fast financing on pre-owned vehicles..."
-            rows={3}
-            className="input-field text-sm py-2 resize-none"
-          />
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Text — English</label>
+            <textarea
+              value={settings.subtitle || ''}
+              onChange={e => setSettings(prev => ({ ...prev, subtitle: e.target.value }))}
+              placeholder="We offer easy and fast financing on pre-owned vehicles..."
+              rows={2}
+              className="input-field text-sm py-2 resize-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">Text — Español</label>
+            <textarea
+              value={settings.subtitleEs || ''}
+              onChange={e => setSettings(prev => ({ ...prev, subtitleEs: e.target.value }))}
+              placeholder="Ofrecemos financiamiento fácil y rápido en vehículos usados..."
+              rows={2}
+              className="input-field text-sm py-2 resize-none"
+            />
+          </div>
         </div>
 
         <button
