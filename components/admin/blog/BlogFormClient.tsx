@@ -42,16 +42,25 @@ export default function BlogFormClient({ post, isNew }: BlogFormClientProps) {
         isPublished,
       }
 
-      const url = isNew ? '/api/admin/blog' : `/api/admin/blog/${post!.id}`
-      const method = isNew ? 'POST' : 'PUT'
+      // Write directly to Firestore from the browser
+      const { collection, addDoc, doc, updateDoc, serverTimestamp } = await import('firebase/firestore')
+      const { db } = await import('@/lib/firebase')
+      const { generatePostSlug } = await import('@/services/blogService')
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw new Error('Save failed')
+      if (isNew) {
+        const slug = generatePostSlug(payload.title.en)
+        await addDoc(collection(db, 'blog'), {
+          ...payload,
+          slug,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+      } else {
+        await updateDoc(doc(db, 'blog', post!.id), {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        })
+      }
 
       setSuccess(isNew ? 'Post created successfully.' : 'Post updated successfully.')
       if (isNew) {

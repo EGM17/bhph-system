@@ -146,16 +146,26 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
         images: uploadedImages,
       }
 
-      const url = isNew ? '/api/admin/vehicles' : `/api/admin/vehicles/${vehicle!.id}`
-      const method = isNew ? 'POST' : 'PUT'
+      // Write directly to Firestore from the browser — avoids server auth issues
+      const { collection, addDoc, doc, updateDoc, serverTimestamp } = await import('firebase/firestore')
+      const { db } = await import('@/lib/firebase')
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-
-      if (!res.ok) throw new Error('Save failed')
+      if (isNew) {
+        const { generateSlug } = await import('@/services/vehicleService')
+        const slug = generateSlug({ year: payload.year, make: payload.make, model: payload.model, vin: payload.vin })
+        await addDoc(collection(db, 'inventory'), {
+          ...payload,
+          slug,
+          views: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        })
+      } else {
+        await updateDoc(doc(db, 'inventory', vehicle!.id), {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        })
+      }
 
       setSuccess(isNew ? 'Vehicle created successfully.' : 'Vehicle updated successfully.')
       if (isNew) {

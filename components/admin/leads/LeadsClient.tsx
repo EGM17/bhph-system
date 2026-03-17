@@ -28,11 +28,9 @@ export default function LeadsClient({ leads: initialLeads }: LeadsClientProps) {
   const handleStatusChange = async (id: string, status: Lead['status']) => {
     setUpdating(id)
     try {
-      await fetch(`/api/admin/leads/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status }),
-      })
+      const { doc, updateDoc } = await import('firebase/firestore')
+      const { db } = await import('@/lib/firebase')
+      await updateDoc(doc(db, 'leads', id), { status })
       setLeads((prev) => prev.map((l) => (l.id === id ? { ...l, status } : l)))
     } catch (err) {
       console.error('Failed to update lead status:', err)
