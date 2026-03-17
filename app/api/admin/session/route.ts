@@ -1,32 +1,8 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { initializeApp, getApps, cert, getApp } from 'firebase-admin/app'
-import { getAuth } from 'firebase-admin/auth'
 
-function getAdminAuth() {
-  if (getApps().length > 0) {
-    return getAuth(getApp())
-  }
-
-  const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID!
-  const clientEmail = process.env.APP_CLIENT_EMAIL ?? process.env.FIREBASE_CLIENT_EMAIL
-  const rawKey = process.env.APP_PRIVATE_KEY ?? process.env.FIREBASE_PRIVATE_KEY ?? ''
-  const privateKey = rawKey.includes('\\n') ? rawKey.replace(/\\n/g, '\n') : rawKey
-
-  console.log('[session] clientEmail present:', !!clientEmail)
-  console.log('[session] privateKey present:', !!privateKey)
-  console.log('[session] projectId:', projectId)
-
-  const app = initializeApp({
-    credential: cert({ projectId, clientEmail: clientEmail!, privateKey }),
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  })
-
-  return getAuth(app)
-}
-
-const SESSION_DURATION_MS = 5 * 24 * 60 * 60 * 1000
+const SESSION_DURATION_MS = 5 * 24 * 60 * 60 * 1000 // 5 days
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,16 +12,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing ID token.' }, { status: 400 })
     }
 
-    const auth = getAdminAuth()
-    const decodedToken = await auth.verifyIdToken(idToken)
-    console.log('[session] Token verified for uid:', decodedToken.uid)
+    // Verify token with Firebase Auth REST API — no Admin SDK needed
+    const projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY
 
-    const sessionCookie = await auth.createSessionCookie(idToken, {
-      expiresIn: SESSION_DURATION_MS,
-    })
+    const verifyRes = await fetch(
+      `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      }
+    )
 
+    if (!verifyRes.ok) {
+      console.error('[session] Token verification failed:', await verifyRes.text())
+      return NextResponse.json({ error: 'Invalid token.' }, { status: 401 })
+    }
+
+    const data = await verifyRes.json()
+    const uid = data.users?.[0]?.localId
+
+    if (!uid) {
+      return NextResponse.json({ error: 'User not found.' }, { status: 401 })
+    }
+
+    console.log('[session] Token verified for uid:', uid)
+
+    // Store the idToken directly as the session cookie
     const response = NextResponse.json({ success: true }, { status: 200 })
-    response.cookies.set('session', sessionCookie, {
+    response.cookies.set('session', idToken, {
       httpOnly: true,
       secure: true,
       sameSite: 'lax',
@@ -55,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     return response
   } catch (error) {
-    console.error('[POST /api/admin/session] Full error:', error)
+    console.error('[POST /api/admin/session]', error)
     return NextResponse.json({ error: 'Unauthorized.' }, { status: 401 })
   }
 }
