@@ -3,24 +3,34 @@ import { Link } from '@/i18n/navigation'
 import { ArrowRight } from 'lucide-react'
 import Image from 'next/image'
 
-interface HeroProps {
+interface HeroSettings {
   heroImage?: string
+  span1Text?: string
+  span1Color?: string
+  span1Size?: string
+  span2Text?: string
+  span2Color?: string
+  span2Size?: string
+  subtitle?: string
 }
 
-export default function Hero({ heroImage }: HeroProps) {
+export default function Hero({
+  heroImage,
+  span1Text,
+  span1Color,
+  span1Size,
+  span2Text,
+  span2Color,
+  span2Size,
+  subtitle,
+}: HeroSettings) {
   const t = useTranslations('hero')
 
   return (
-    <section
-      className="bg-blue-600 text-white overflow-hidden"
-      aria-label="Hero section"
-    >
+    <section className="bg-blue-600 text-white overflow-hidden" aria-label="Hero section">
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
-        style={{
-          backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`,
-          backgroundSize: '24px 24px',
-        }}
+        style={{ backgroundImage: `radial-gradient(circle, #ffffff 1px, transparent 1px)`, backgroundSize: '24px 24px' }}
         aria-hidden="true"
       />
 
@@ -31,13 +41,32 @@ export default function Hero({ heroImage }: HeroProps) {
             <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium">
               {t('badge')}
             </span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              {t('title')}{' '}
-              <span className="text-amber-400">{t('titleAccent')}</span>
+
+            <h1 className="font-bold leading-tight">
+              <span
+                style={{
+                  color: span1Color || '#ffffff',
+                  fontSize: span1Size || undefined,
+                }}
+                className={span1Size ? '' : 'text-4xl md:text-5xl lg:text-6xl'}
+              >
+                {span1Text || t('title')}
+              </span>{' '}
+              <span
+                style={{
+                  color: span2Color || '#F59E0B',
+                  fontSize: span2Size || undefined,
+                }}
+                className={span2Size ? '' : 'text-4xl md:text-5xl lg:text-6xl'}
+              >
+                {span2Text || t('titleAccent')}
+              </span>
             </h1>
+
             <p className="text-lg text-blue-100 leading-relaxed max-w-lg mx-auto lg:mx-0">
-              {t('subtitle')}
+              {subtitle || t('subtitle')}
             </p>
+
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
               <Link href="/inventory" className="btn-primary bg-white text-blue-600 hover:bg-blue-50 shadow-lg">
                 {t('ctaPrimary')}
@@ -47,6 +76,7 @@ export default function Hero({ heroImage }: HeroProps) {
                 {t('ctaSecondary')}
               </Link>
             </div>
+
             <div className="flex items-center justify-center lg:justify-start gap-8 pt-4">
               <div className="text-center">
                 <p className="text-3xl font-bold">{t('stat1Value')}</p>
@@ -59,9 +89,7 @@ export default function Hero({ heroImage }: HeroProps) {
               </div>
               <div className="w-px h-12 bg-white/30" aria-hidden="true" />
               <div className="text-center">
-                <p className="text-3xl font-bold">
-                  {t('stat3Value')}
-                </p>
+                <p className="text-3xl font-bold">{t('stat3Value')}</p>
                 <p className="text-sm text-blue-200">{t('stat3Label')}</p>
               </div>
             </div>
@@ -72,7 +100,7 @@ export default function Hero({ heroImage }: HeroProps) {
               {heroImage ? (
                 <Image
                   src={heroImage}
-                  alt="El Compa Guero Auto Sales"
+                  alt={`${span1Text || 'Financing'} ${span2Text || 'interest-free'} - El Compa Guero Auto Sales Salem Oregon`}
                   fill
                   className="object-cover"
                   priority

@@ -1,4 +1,3 @@
-import { getTranslations } from 'next-intl/server'
 import { getFeaturedVehicles } from '@/services/vehicleService'
 import { doc, getDoc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -59,15 +58,24 @@ export default async function HomePage({ params }: Props) {
     featuredVehicles = []
   }
 
-  let heroImage: string | undefined
+  let heroSettings: Record<string, string> = {}
   try {
     const snap = await getDoc(doc(db, 'settings', 'site'))
-    if (snap.exists()) heroImage = snap.data().heroImage
+    if (snap.exists()) heroSettings = snap.data() as Record<string, string>
   } catch {}
 
   return (
     <PublicLayout>
-      <Hero heroImage={heroImage} />
+      <Hero
+        heroImage={heroSettings.heroImage}
+        span1Text={heroSettings.span1Text}
+        span1Color={heroSettings.span1Color}
+        span1Size={heroSettings.span1Size}
+        span2Text={heroSettings.span2Text}
+        span2Color={heroSettings.span2Color}
+        span2Size={heroSettings.span2Size}
+        subtitle={heroSettings.subtitle}
+      />
       <FeaturedVehicles vehicles={featuredVehicles} />
       <WhyChooseUs />
       <CtaBanner />
