@@ -157,7 +157,7 @@ export default function VehicleFormClient({ vehicle, isNew }: VehicleFormClientP
 
       if (isNew) {
         const { generateSlug } = await import('@/services/vehicleService')
-        const slug = generateSlug({ year: clean.year, make: clean.make, model: clean.model, vin: clean.vin })
+        const slug = generateSlug({ year: payload.year, make: payload.make, model: payload.model, vin: payload.vin })
         await addDoc(collection(db, 'inventory'), {
           ...clean,
           slug,
