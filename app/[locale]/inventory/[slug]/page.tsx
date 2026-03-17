@@ -79,21 +79,21 @@ export default async function VehicleDetailPage({ params }: Props) {
   const description = resolveField(vehicle.description, locale)
   const isInHouse = vehicle.financingType === 'in-house'
 
-  // Build specs array — only show fields that have data
+  // Specs with icons — only show fields that have data
   const specs = [
-    vehicle.year && { icon: Calendar, label: isEs ? 'Año' : 'Year', value: String(vehicle.year) },
-    vehicle.mileage && { icon: Gauge, label: isEs ? 'Millaje' : 'Mileage', value: `${vehicle.mileage.toLocaleString('en-US')} mi` },
-    vehicle.bodyClass && { icon: Car, label: isEs ? 'Carrocería' : 'Body', value: vehicle.bodyClass },
-    vehicle.doors && { icon: DoorOpen, label: isEs ? 'Puertas' : 'Doors', value: vehicle.doors },
-    vehicle.color && { icon: Palette, label: isEs ? 'Color' : 'Color', value: vehicle.color },
-    vehicle.fuelType && { icon: Fuel, label: isEs ? 'Combustible' : 'Fuel', value: vehicle.fuelType },
-    vehicle.engine && { icon: Zap, label: isEs ? 'Motor' : 'Engine', value: vehicle.engine },
-    vehicle.cylinders && { icon: Layers, label: isEs ? 'Cilindros' : 'Cylinders', value: `${vehicle.cylinders} cyl` },
-    vehicle.transmission && { icon: Settings2, label: isEs ? 'Transmisión' : 'Transmission', value: vehicle.transmission },
-    vehicle.drivetrain && { icon: GitBranch, label: isEs ? 'Tracción' : 'Drivetrain', value: vehicle.drivetrain },
-    vehicle.mpg && { icon: Gauge, label: 'MPG', value: vehicle.mpg },
-    vehicle.displacement && { icon: Zap, label: isEs ? 'Cilindrada' : 'Displacement', value: vehicle.displacement },
-  ].filter(Boolean) as { icon: React.FC<{ className?: string }>, label: string, value: string }[]
+    vehicle.year       && { icon: Calendar,   label: isEs ? 'Año'          : 'Year',         value: String(vehicle.year) },
+    vehicle.mileage    && { icon: Gauge,       label: isEs ? 'Millaje'      : 'Mileage',      value: `${vehicle.mileage.toLocaleString('en-US')} mi` },
+    vehicle.bodyClass  && { icon: Car,         label: isEs ? 'Carrocería'   : 'Body',          value: vehicle.bodyClass },
+    vehicle.doors      && { icon: DoorOpen,    label: isEs ? 'Puertas'      : 'Doors',         value: vehicle.doors },
+    vehicle.color      && { icon: Palette,     label: isEs ? 'Color'        : 'Color',         value: vehicle.color },
+    vehicle.fuelType   && { icon: Fuel,        label: isEs ? 'Combustible'  : 'Fuel',          value: vehicle.fuelType },
+    vehicle.engine     && { icon: Zap,         label: isEs ? 'Motor'        : 'Engine',        value: vehicle.engine },
+    vehicle.cylinders  && { icon: Layers,      label: isEs ? 'Cilindros'    : 'Cylinders',     value: `${vehicle.cylinders} cyl` },
+    vehicle.transmission && { icon: Settings2, label: isEs ? 'Transmisión'  : 'Transmission',  value: vehicle.transmission },
+    vehicle.drivetrain && { icon: GitBranch,   label: isEs ? 'Tracción'     : 'Drivetrain',    value: vehicle.drivetrain },
+    vehicle.mpg        && { icon: Gauge,       label: 'MPG',                                    value: vehicle.mpg },
+    vehicle.displacement && { icon: Zap,       label: isEs ? 'Cilindrada'   : 'Displacement',  value: vehicle.displacement },
+  ].filter(Boolean) as { icon: React.FC<{ className?: string; 'aria-hidden'?: string }>, label: string, value: string }[]
 
   const carSchema = {
     '@context': 'https://schema.org',
@@ -126,98 +126,154 @@ export default async function VehicleDetailPage({ params }: Props) {
     <PublicLayout>
       <Script id={`schema-car-${vehicle.id}`} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(carSchema) }} />
 
-      <div className="container-section py-6">
-        <a
-          href={isEs ? '/es/inventario' : '/inventory'}
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 transition-colors mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-          {t('backToInventory')}
-        </a>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-          {/* Left: gallery + description */}
-          <div className="lg:col-span-2 space-y-6">
-            <VehicleGallery images={vehicle.images ?? []} title={title} />
-
-            {/* Description */}
-            {description && (
-              <div className="bg-white rounded-xl border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-3">{t('description')}</h2>
-                <p className="text-gray-600 leading-relaxed whitespace-pre-line">{description}</p>
-              </div>
-            )}
-
-            {/* Full specs grid */}
-            {specs.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-100 p-6">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                  {isEs ? 'Especificaciones' : 'Vehicle Specs'}
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {specs.map(({ icon: Icon, label, value }) => (
-                    <div key={label} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
-                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                        <Icon className="w-4 h-4 text-blue-600" aria-hidden="true" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-400 leading-tight">{label}</p>
-                        <p className="text-sm font-semibold text-gray-900 leading-tight mt-0.5">{value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Right: pricing + lead form */}
-          <div className="space-y-5">
+      {/* Hero banner */}
+      <div className="bg-slate-900 text-white">
+        <div className="container-section py-4">
+          <a
+            href={isEs ? '/es/inventario' : '/inventory'}
+            className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white transition-colors mb-3"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('backToInventory')}
+          </a>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{title}</h1>
-              {vehicle.trim && <p className="text-sm text-gray-500 mb-2">{vehicle.trim}{vehicle.series ? ` · ${vehicle.series}` : ''}</p>}
-              {isInHouse && <span className="badge-blue text-xs">{t('interestFree')}</span>}
+              <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight">{title}</h1>
+              {(vehicle.trim || vehicle.series) && (
+                <p className="text-slate-400 text-sm mt-1">
+                  {[vehicle.trim, vehicle.series].filter(Boolean).join(' · ')}
+                </p>
+              )}
+              <div className="flex items-center gap-2 mt-2">
+                {isInHouse && (
+                  <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                    ✓ {t('interestFree')}
+                  </span>
+                )}
+                {vehicle.vin && (
+                  <span className="text-xs text-slate-500 font-mono">
+                    VIN: {vehicle.vin}
+                  </span>
+                )}
+              </div>
             </div>
-
-            {/* Pricing card */}
-            <div className="bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+            {/* Price in header */}
+            <div className="text-right">
               {isInHouse && vehicle.monthlyPaymentFrom ? (
-                <>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t('monthlyPayment')}</p>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-gray-900">$ {vehicle.monthlyPaymentFrom.toLocaleString('en-US')}</span>
-                    <span className="text-gray-500 text-sm">{t('perMonth')}</span>
-                  </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-widest">{t('monthlyPayment')}</p>
+                  <p className="text-3xl font-bold text-white">
+                    ${vehicle.monthlyPaymentFrom.toLocaleString('en-US')}
+                    <span className="text-base font-normal text-slate-400 ml-1">{t('perMonth')}</span>
+                  </p>
                   {vehicle.downPaymentFrom && (
-                    <p className="text-sm text-gray-500">
-                      {t('downPaymentFrom')}{' '}
-                      <strong className="text-gray-800">$ {vehicle.downPaymentFrom.toLocaleString('en-US')}</strong>
+                    <p className="text-sm text-slate-400">
+                      {t('downPaymentFrom')} <strong className="text-slate-200">${vehicle.downPaymentFrom.toLocaleString('en-US')}</strong>
                     </p>
                   )}
-                </>
+                </div>
               ) : vehicle.price ? (
-                <>
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Price</p>
-                  <span className="text-4xl font-bold text-gray-900">$ {vehicle.price.toLocaleString('en-US')}</span>
-                </>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase tracking-widest">Price</p>
+                  <p className="text-3xl font-bold text-white">${vehicle.price.toLocaleString('en-US')}</p>
+                </div>
               ) : null}
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* VIN */}
-            {vehicle.vin && (
-              <div className="bg-gray-50 rounded-xl px-4 py-3 text-xs text-gray-500">
-                <span className="font-semibold">VIN:</span>{' '}
-                <span className="font-mono">{vehicle.vin}</span>
+      {/* Main content */}
+      <div className="bg-gray-50 min-h-screen">
+        <div className="container-section py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            {/* Left: gallery + specs + description */}
+            <div className="lg:col-span-2 space-y-5">
+
+              {/* Gallery */}
+              <VehicleGallery images={vehicle.images ?? []} title={title} />
+
+              {/* Specs grid */}
+              {specs.length > 0 && (
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">
+                    {isEs ? 'Especificaciones' : 'Vehicle Specs'}
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {specs.map(({ icon: Icon, label, value }) => (
+                      <div key={label} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
+                          <Icon className="w-4 h-4 text-blue-600" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-400 leading-tight truncate">{label}</p>
+                          <p className="text-sm font-semibold text-gray-900 leading-tight truncate">{value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Description */}
+              {description && (
+                <div className="bg-white rounded-xl border border-gray-100 p-5">
+                  <h2 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">
+                    {t('description')}
+                  </h2>
+                  <p className="text-gray-600 leading-relaxed whitespace-pre-line text-sm">{description}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Right: CTA panel */}
+            <div className="space-y-4">
+
+              {/* Sticky wrapper on desktop */}
+              <div className="lg:sticky lg:top-24 space-y-4">
+
+                {/* Financing highlights */}
+                {isInHouse && (
+                  <div className="bg-blue-600 rounded-xl p-5 text-white">
+                    <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-3">
+                      {isEs ? 'Financiamiento propio' : 'In-house financing'}
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      {[
+                        isEs ? '✓ Sin verificación de crédito' : '✓ No credit check',
+                        isEs ? '✓ Sin ITIN ni SSN' : '✓ No ITIN or SSN needed',
+                        isEs ? '✓ Sin intereses' : '✓ 0% interest',
+                        isEs ? '✓ Maneja el mismo día' : '✓ Drive the same day',
+                      ].map(item => (
+                        <p key={item} className="text-blue-100">{item}</p>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Call CTA */}
+                <a
+                  href="tel:+15038789550"
+                  className="flex items-center justify-center gap-2 w-full py-4 bg-gray-900 hover:bg-gray-800 text-white font-semibold rounded-xl transition-colors"
+                >
+                  <Phone className="w-5 h-5" aria-hidden="true" />
+                  {t('callForPricing')}
+                </a>
+
+                {/* Lead form */}
+                <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                  <VehicleLeadForm
+                    vehicleId={vehicle.id}
+                    vehicleTitle={title}
+                    vehicleSlug={slug}
+                    locale={locale}
+                  />
+                </div>
+
               </div>
-            )}
+            </div>
 
-            <a href="tel:+15038789550" className="btn-primary w-full justify-center">
-              <Phone className="w-4 h-4" aria-hidden="true" />
-              {t('callForPricing')}
-            </a>
-
-            <VehicleLeadForm vehicleId={vehicle.id} vehicleTitle={title} vehicleSlug={slug} locale={locale} />
           </div>
         </div>
       </div>
