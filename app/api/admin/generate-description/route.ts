@@ -71,7 +71,7 @@ Focus instructions: ${focusInstructions[focus] || focusInstructions.features}
 Write 2-3 short paragraphs (maximum 120 words total). No lists or bullets. Plain text only. Do not include exact prices or payments unless they are in the data. End with a call to action to contact us or visit the dealership in Salem, Oregon.`
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
