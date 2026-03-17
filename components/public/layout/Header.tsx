@@ -23,23 +23,20 @@ export default function Header() {
     { label: t('contact'), href: localePath('/contact') },
   ]
 
-  // Strip locale prefix from pathname to get the raw path
+  // Strip locale prefix to get raw path
   const rawPath = pathname
-    .replace(/^\/en/, '')   // remove /en prefix
-    .replace(/^\/es/, '')   // remove /es prefix
+    .replace(/^\/en/, '')
+    .replace(/^\/es/, '')
     || '/'
 
-  // Switch locale preserving current page
   const switchLocalePath = () => {
     if (locale === 'en') {
-      // EN → ES: translate path segments
       const esPath = rawPath
         .replace('/inventory', '/inventario')
         .replace('/financing', '/financiamiento')
         .replace('/contact', '/contacto')
       return `/es${esPath === '/' ? '' : esPath}`
     } else {
-      // ES → EN: translate back
       const enPath = rawPath
         .replace('/inventario', '/inventory')
         .replace('/financiamiento', '/financing')
@@ -52,7 +49,6 @@ export default function Header() {
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md">
-      {/* Top bar */}
       <div className="bg-blue-600">
         <div className="container-section">
           <div className="flex items-center justify-between h-10 text-sm text-white">
@@ -86,10 +82,8 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Main nav */}
       <div className="container-section">
         <div className="flex items-center justify-between h-[72px]">
-          {/* Logo */}
           <a
             href={locale === 'es' ? '/es' : '/'}
             className="flex items-center gap-3 group"
@@ -106,7 +100,6 @@ export default function Header() {
             </div>
           </a>
 
-          {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-1" aria-label="Main navigation">
             {navLinks.map((link) => (
               <a
@@ -119,14 +112,12 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* CTA button */}
           <div className="hidden md:flex">
             <a href={localePath('/inventory')} className="btn-primary text-sm">
               {t('viewInventory')}
             </a>
           </div>
 
-          {/* Mobile menu button */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
@@ -139,7 +130,6 @@ export default function Header() {
         </div>
       </div>
 
-      {/* Mobile nav */}
       {mobileOpen && (
         <div id="mobile-menu" className="md:hidden border-t border-gray-100 bg-white shadow-lg">
           <nav className="container-section py-4 space-y-1" aria-label="Mobile navigation">
