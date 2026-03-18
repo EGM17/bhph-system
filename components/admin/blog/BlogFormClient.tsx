@@ -33,7 +33,7 @@ export default function BlogFormClient({ post, isNew }: BlogFormClientProps) {
   const [contentEn, setContentEn] = useState(post?.content?.en ?? '')
   const [contentEs, setContentEs] = useState(post?.content?.es ?? '')
   const [coverImage, setCoverImage] = useState(post?.coverImage ?? '')
-  const [category, setCategory] = useState((post as any)?.category ?? '')
+  const [category, setCategory] = useState((post as BlogPost & { category?: string })?.category ?? '')
   const [isPublished, setIsPublished] = useState(post?.isPublished ?? false)
   const [activeTab, setActiveTab] = useState<'en' | 'es'>('en')
 

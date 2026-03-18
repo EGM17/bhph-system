@@ -62,15 +62,6 @@ export default async function VehicleDetailPage({ params }: Props) {
   const description = resolveField(vehicle.description, locale)
   const isInHouse = vehicle.financingType === 'in-house'
 
-  // Feature pills — compact specs shown as pills
-  const featurePills = [
-    vehicle.drivetrain,
-    vehicle.transmission,
-    vehicle.engine,
-    vehicle.fuelType,
-    vehicle.bodyClass,
-  ].filter(Boolean) as string[]
-
   // Specs grid
   const specs = [
     vehicle.year        && { icon: Calendar,   label: isEs ? 'Año'         : 'Year',         value: String(vehicle.year) },
