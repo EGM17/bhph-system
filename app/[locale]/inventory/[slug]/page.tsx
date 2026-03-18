@@ -169,11 +169,55 @@ export default async function VehicleDetailPage({ params }: Props) {
                     </span>
                   )}
                   {vehicle.vin && (
-                    <span className="text-xs text-gray-400 font-mono">
-                      VIN: {vehicle.vin}
+                    <span className="flex items-center gap-1.5">
+                      <Car className="w-4 h-4 text-gray-400" />
+                      <span className="font-mono">{vehicle.vin}</span>
                     </span>
                   )}
                 </div>
+              </div>
+
+              {/* Price card — mobile/tablet only, shown right after title */}
+              <div className="lg:hidden bg-white rounded-xl border border-gray-100 p-5 space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  {isInHouse && vehicle.monthlyPaymentFrom ? t('monthlyPayment') : isEs ? 'Precio' : 'Our Price'}
+                </p>
+                {isInHouse && vehicle.monthlyPaymentFrom ? (
+                  <>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl font-extrabold text-blue-600 tracking-tight">
+                        ${vehicle.monthlyPaymentFrom.toLocaleString('en-US')}
+                      </span>
+                      <span className="text-gray-400 text-base font-medium">{t('perMonth')}</span>
+                    </div>
+                    {vehicle.downPaymentFrom && (
+                      <p className="text-sm text-gray-500">
+                        {t('downPaymentFrom')}{' '}
+                        <span className="text-gray-900 font-semibold">${vehicle.downPaymentFrom.toLocaleString('en-US')}</span>
+                      </p>
+                    )}
+                    {isInHouse && (
+                      <div className="pt-2 border-t border-gray-100 space-y-1.5">
+                        {[
+                          isEs ? '✓ Sin verificación de crédito' : '✓ No credit check',
+                          isEs ? '✓ Sin ITIN ni SSN' : '✓ No ITIN or SSN needed',
+                          isEs ? '✓ Sin intereses' : '✓ 0% interest',
+                          isEs ? '✓ Maneja el mismo día' : '✓ Drive the same day',
+                        ].map(item => (
+                          <p key={item} className="text-xs text-gray-500">{item}</p>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : vehicle.price ? (
+                  <p className="text-4xl font-extrabold text-blue-600 tracking-tight">
+                    ${vehicle.price.toLocaleString('en-US')}
+                  </p>
+                ) : null}
+                <a href="tel:+15038789550" className="flex items-center justify-center gap-2 w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors mt-2">
+                  <Phone className="w-4 h-4" />
+                  {t('callForPricing')}
+                </a>
               </div>
 
               {/* Vehicle Specs grid */}
@@ -249,8 +293,8 @@ export default async function VehicleDetailPage({ params }: Props) {
 
             </div>
 
-            {/* ── RIGHT: sticky panel ── */}
-            <div>
+            {/* ── RIGHT: sticky panel — hidden on mobile (price shown inline above) ── */}
+            <div className="hidden lg:block">
               <div className="lg:sticky lg:top-24 space-y-4">
 
                 {/* Price card */}
