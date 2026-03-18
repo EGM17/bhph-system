@@ -226,14 +226,16 @@ export default async function VehicleDetailPage({ params }: Props) {
                   <h2 className="text-base font-bold text-gray-900 mb-4">
                     {isEs ? 'Especificaciones del vehículo' : 'Vehicle Specifications'}
                   </h2>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                     {specs.map(({ icon: Icon, label, value }) => (
-                      <div key={label} className="space-y-0.5">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                          <Icon className="w-3.5 h-3.5" />
-                          {label}
-                        </p>
-                        <p className="text-sm font-semibold text-gray-900">{value}</p>
+                      <div key={label} className="flex items-center gap-3 bg-gray-50 rounded-xl px-3 py-3">
+                        <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                          <Icon className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-400 uppercase tracking-wide truncate">{label}</p>
+                          <p className="text-sm font-semibold text-gray-900 truncate">{value}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
