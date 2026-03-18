@@ -58,8 +58,7 @@ export default function VehicleGallery({ images, title }: VehicleGalleryProps) {
       {/* ── MOBILE: single image with swipe arrows ── */}
       <div className="block md:hidden">
         <div
-          className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100 cursor-zoom-in"
-          onClick={() => openLightbox(activeIndex)}
+          className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gray-100"
         >
           <Image
             src={sorted[activeIndex].url}
@@ -95,14 +94,7 @@ export default function VehicleGallery({ images, title }: VehicleGalleryProps) {
             {activeIndex + 1} / {sorted.length}
           </div>
 
-          {/* All photos button */}
-          <button
-            onClick={e => { e.stopPropagation(); openLightbox(activeIndex) }}
-            className="absolute bottom-3 right-3 flex items-center gap-1.5 px-3 py-1 bg-black/50 hover:bg-black/70 rounded-full text-white text-xs font-medium transition-colors"
-          >
-            <Images className="w-3.5 h-3.5" />
-            All photos
-          </button>
+
         </div>
 
         {/* Mobile thumbnail strip */}
