@@ -60,15 +60,25 @@ export default function BlogFormClient({ post, isNew }: BlogFormClientProps) {
     setError('')
     try {
       const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
-      const { storage } = await import('@/lib/firebase')
+      const { storage, auth } = await import('@/lib/firebase')
+      const { signInWithEmailAndPassword } = await import('firebase/auth')
+
+      // Ensure user is authenticated before uploading
+      if (!auth.currentUser) {
+        setError('Session expired. Please refresh the page and log in again.')
+        setUploadingImage(false)
+        return
+      }
+
       const ext = file.name.split('.').pop()
       const filename = `${Date.now()}.${ext}`
       const storageRef = ref(storage, `blog/${filename}`)
       await uploadBytes(storageRef, file, { contentType: file.type })
       const url = await getDownloadURL(storageRef)
       setCoverImage(url)
-    } catch {
-      setError('Failed to upload image.')
+    } catch (err) {
+      console.error('Upload error:', err)
+      setError('Failed to upload image. Make sure you are logged in and try again.')
     } finally {
       setUploadingImage(false)
     }

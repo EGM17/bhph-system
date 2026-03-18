@@ -22,7 +22,9 @@ interface TipTapEditorProps {
 export default function TipTapEditor({ content, onChange, placeholder }: TipTapEditorProps) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable built-in extensions we're configuring separately
+      }),
       Underline,
       Link.configure({ openOnClick: false, HTMLAttributes: { class: 'text-blue-600 underline' } }),
       TextAlign.configure({ types: ['heading', 'paragraph'] }),

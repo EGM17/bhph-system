@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { signInWithEmailAndPassword } from 'firebase/auth'
+import { signInWithEmailAndPassword, browserLocalPersistence, setPersistence } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { Car } from 'lucide-react'
 
@@ -19,6 +19,9 @@ export default function AdminLoginPage() {
     setError('')
 
     try {
+      // Persist auth state in localStorage so it survives page reloads
+      await setPersistence(auth, browserLocalPersistence)
+
       const credential = await signInWithEmailAndPassword(auth, email, password)
       const idToken = await credential.user.getIdToken()
 
@@ -94,10 +97,7 @@ export default function AdminLoginPage() {
           </div>
 
           {error && (
-            <div
-              role="alert"
-              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
-            >
+            <div role="alert" className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
               {error}
             </div>
           )}
