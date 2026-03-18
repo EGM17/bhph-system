@@ -1,0 +1,15 @@
+{
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "bhph-system.vercel.app"
+        }
+      ],
+      "destination": "https://elcompagueroautosales.com/$1",
+      "permanent": true
+    }
+  ]
+}
