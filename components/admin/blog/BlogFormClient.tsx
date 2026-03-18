@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { Globe, Loader2, AlertCircle, Upload, CheckCircle } from 'lucide-react'
 import TipTapEditor from './TipTapEditor'
@@ -11,19 +11,19 @@ interface BlogFormClientProps {
   isNew: boolean
 }
 
-const CATEGORIES = [
-  { value: 'financing', label: 'Financing Tips' },
-  { value: 'buying-guide', label: 'Buying Guide' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'news', label: 'News & Updates' },
-  { value: 'community', label: 'Community' },
-]
+interface Category {
+  id: string
+  nameEn: string
+  nameEs: string
+  slug: string
+}
 
 export default function BlogFormClient({ post, isNew }: BlogFormClientProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [categories, setCategories] = useState<Category[]>([])
 
   // Form state
   const [titleEn, setTitleEn] = useState(post?.title?.en ?? '')
@@ -36,6 +36,19 @@ export default function BlogFormClient({ post, isNew }: BlogFormClientProps) {
   const [category, setCategory] = useState((post as BlogPost & { category?: string })?.category ?? '')
   const [isPublished, setIsPublished] = useState(post?.isPublished ?? false)
   const [activeTab, setActiveTab] = useState<'en' | 'es'>('en')
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const { collection, getDocs, orderBy, query } = await import('firebase/firestore')
+        const { db } = await import('@/lib/firebase')
+        const q = query(collection(db, 'blog_categories'), orderBy('nameEn', 'asc'))
+        const snap = await getDocs(q)
+        setCategories(snap.docs.map(d => ({ id: d.id, ...d.data() } as Category)))
+      } catch {}
+    }
+    loadCategories()
+  }, [])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -212,10 +225,16 @@ export default function BlogFormClient({ post, isNew }: BlogFormClientProps) {
               <label className={labelClass}>Category</label>
               <select value={category} onChange={e => setCategory(e.target.value)} className={inputClass}>
                 <option value="">— No category —</option>
-                {CATEGORIES.map(c => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                {categories.map(c => (
+                  <option key={c.slug} value={c.slug}>{c.nameEn}</option>
                 ))}
               </select>
+              {categories.length === 0 && (
+                <p className="text-xs text-gray-400 mt-1">
+                  No categories yet.{' '}
+                  <a href="/admin/blog/categories" className="text-blue-600 hover:underline">Create some →</a>
+                </p>
+              )}
             </div>
             <label className="flex items-center gap-3 cursor-pointer p-3 bg-gray-50 rounded-xl">
               <input type="checkbox" checked={isPublished} onChange={e => setIsPublished(e.target.checked)} className="w-4 h-4 text-blue-600 rounded" />

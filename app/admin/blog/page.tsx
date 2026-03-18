@@ -14,9 +14,14 @@ export default async function AdminBlogPage() {
           <h2 className="text-xl font-bold text-gray-900">Blog</h2>
           <p className="text-sm text-gray-500 mt-0.5">{posts.length} total posts</p>
         </div>
-        <a href="/admin/blog/new" className="btn-primary text-sm">
-          + New post
-        </a>
+        <div className="flex items-center gap-2">
+          <a href="/admin/blog/categories" className="btn-outline-blue text-sm">
+            Categories
+          </a>
+          <a href="/admin/blog/new" className="btn-primary text-sm">
+            + New post
+          </a>
+        </div>
       </div>
       <AdminBlogClient posts={posts} />
     </div>

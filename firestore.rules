@@ -8,8 +8,6 @@ service cloud.firestore {
     }
 
     // ── Inventory ─────────────────────────────────────────────────────────────
-    // Read: anyone (admin needs all vehicles, public gets filtered in app code)
-    // Write: only authenticated users
     match /inventory/{vehicleId} {
       allow read: if true;
       allow write: if isSignedIn();
@@ -29,6 +27,12 @@ service cloud.firestore {
 
     // ── Blog ──────────────────────────────────────────────────────────────────
     match /blog/{postId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // ── Blog Categories ───────────────────────────────────────────────────────
+    match /blog_categories/{categoryId} {
       allow read: if true;
       allow write: if isSignedIn();
     }
