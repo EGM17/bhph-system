@@ -92,6 +92,7 @@ export interface BlogPost {
   content: BilingualField
   coverImage?: string
   author?: string
+  category?: string
   isPublished: boolean
   createdAt: string
   updatedAt: string
